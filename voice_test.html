@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Voice Recognition Test - AeroLish</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #22c55e;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-input {
+            width: 300px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background: #22c55e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1ea147;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎤 Voice Recognition Test for AeroLish</h1>
+        
+        <div class="test-section">
+            <h3>Test Airport Name Recognition</h3>
+            <p>Enter sample speech and see how it converts to ICAO codes:</p>
+            <input type="text" id="testInput" class="test-input" placeholder="Enter text like 'Delhi to Dubai'" value="Delhi to Dubai">
+            <button onclick="testConversion()">Test Conversion</button>
+            <div id="testResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Supported Airport Examples</h3>
+            <p>Try these example phrases:</p>
+            <ul>
+                <li>"Delhi to Dubai" → VIDP,OMDB</li>
+                <li>"Los Angeles to New York" → KLAX,KJFK</li>
+                <li>"London to Paris" → EGLL,LFPG</li>
+                <li>"Mumbai to Singapore" → VABB,WSSS</li>
+                <li>"Tokyo to Seoul" → RJTT,RKSI</li>
+                <li>"Sydney to Auckland" → YSSY,NZAA</li>
+            </ul>
+            <button onclick="testExamples()">Test All Examples</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Airport Mapping Coverage</h3>
+            <p>This implementation includes <span id="airportCount">0</span> airports from major regions:</p>
+            <ul>
+                <li>🇺🇸 United States: Major airports like LAX, JFK, ORD, etc.</li>
+                <li>🇪🇺 Europe: London, Paris, Frankfurt, Amsterdam, etc.</li>
+                <li>🇮🇳 India & South Asia: Delhi, Mumbai, Dubai, Singapore, etc.</li>
+                <li>🇨🇳 East Asia: Beijing, Tokyo, Seoul, Hong Kong, etc.</li>
+                <li>🌍 Africa: Cairo, Johannesburg, Lagos, Nairobi, etc.</li>
+                <li>🇦🇺 Oceania: Sydney, Melbourne, Auckland, etc.</li>
+                <li>🇧🇷 South America: São Paulo, Buenos Aires, Bogotá, etc.</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>How to Use in AeroLish</h3>
+            <ol>
+                <li>Click the 🎤 microphone button next to the search bar</li>
+                <li>When the button turns red (🔴), start speaking</li>
+                <li>Say two airport names clearly, e.g., "Delhi to Dubai"</li>
+                <li>The system will automatically convert and search</li>
+                <li>If recognition fails, try again or type manually</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Copy the airport mapping from the main application
+        const airportMapping = {
+            // Major US airports
+            'los angeles': 'KLAX', 'lax': 'KLAX', 'la': 'KLAX',
+            'new york': 'KJFK', 'jfk': 'KJFK', 'kennedy': 'KJFK',
+            'chicago': 'KORD', 'ohare': 'KORD', 'ord': 'KORD',
+            'san francisco': 'KSFO', 'sfo': 'KSFO',
+            'miami': 'KMIA', 'mia': 'KMIA',
+            'atlanta': 'KATL', 'atl': 'KATL',
+            
+            // Major European airports
+            'london': 'EGLL', 'heathrow': 'EGLL', 'lhr': 'EGLL',
+            'paris': 'LFPG', 'charles de gaulle': 'LFPG', 'cdg': 'LFPG',
+            'frankfurt': 'EDDF', 'fra': 'EDDF',
+            'amsterdam': 'EHAM', 'schiphol': 'EHAM', 'ams': 'EHAM',
+            
+            // Major Asian airports
+            'delhi': 'VIDP', 'new delhi': 'VIDP', 'del': 'VIDP',
+            'mumbai': 'VABB', 'bombay': 'VABB', 'bom': 'VABB',
+            'dubai': 'OMDB', 'dxb': 'OMDB',
+            'singapore': 'WSSS', 'changi': 'WSSS', 'sin': 'WSSS',
+            'tokyo': 'RJTT', 'haneda': 'RJTT', 'hnd': 'RJTT',
+            'seoul': 'RKSI', 'incheon': 'RKSI', 'icn': 'RKSI',
+            'hong kong': 'VHHH', 'hkg': 'VHHH',
+            
+            // Major Oceanian airports
+            'sydney': 'YSSY', 'syd': 'YSSY',
+            'melbourne': 'YMML', 'mel': 'YMML',
+            'auckland': 'NZAA', 'akl': 'NZAA',
+        };
+        
+        // Update airport count
+        document.getElementById('airportCount').textContent = Object.keys(airportMapping).length;
+        
+        function convertSpeechToICAO(transcript) {
+            const text = transcript.toLowerCase();
+            
+            // Handle common patterns like "Delhi to Dubai", "from London to New York"
+            const patterns = [
+                /from\s+(.+?)\s+to\s+(.+)/,
+                /(.+?)\s+to\s+(.+)/,
+                /(.+?)\s+and\s+(.+)/,
+            ];
+            
+            let airport1 = null, airport2 = null;
+            
+            // Try pattern matching first
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match && match.length >= 3) {
+                    airport1 = match[1].trim();
+                    airport2 = match[2].trim();
+                    break;
+                }
+            }
+            
+            // Convert found airport names to ICAO codes
+            if (airport1 && airport2) {
+                const icao1 = findAirportCode(airport1);
+                const icao2 = findAirportCode(airport2);
+                
+                if (icao1 && icao2) {
+                    return icao1 + ',' + icao2;
+                }
+            }
+            
+            return null;
+        }
+        
+        function findAirportCode(airportName) {
+            const name = airportName.toLowerCase().trim();
+            
+            // Direct match
+            if (airportMapping[name]) {
+                return airportMapping[name];
+            }
+            
+            // Try partial matches
+            const keys = Object.keys(airportMapping);
+            
+            // Look for keys that contain the given name
+            for (const key of keys) {
+                if (key.includes(name) || name.includes(key)) {
+                    return airportMapping[key];
+                }
+            }
+            
+            return null;
+        }
+        
+        function testConversion() {
+            const input = document.getElementById('testInput').value;
+            const result = convertSpeechToICAO(input);
+            const resultDiv = document.getElementById('testResult');
+            
+            if (result) {
+                resultDiv.innerHTML = `<strong>✅ Success:</strong> "${input}" → <strong>${result}</strong>`;
+                resultDiv.style.background = '#d4edda';
+                resultDiv.style.color = '#155724';
+            } else {
+                resultDiv.innerHTML = `<strong>❌ Failed:</strong> Could not identify two airports from "${input}"`;
+                resultDiv.style.background = '#f8d7da';
+                resultDiv.style.color = '#721c24';
+            }
+        }
+        
+        function testExamples() {
+            const examples = [
+                "Delhi to Dubai",
+                "Los Angeles to New York", 
+                "London to Paris",
+                "Mumbai to Singapore",
+                "Tokyo to Seoul",
+                "Sydney to Auckland"
+            ];
+            
+            let results = "<h4>Test Results:</h4>";
+            
+            examples.forEach(example => {
+                const result = convertSpeechToICAO(example);
+                if (result) {
+                    results += `<div style="color: green;">✅ "${example}" → ${result}</div>`;
+                } else {
+                    results += `<div style="color: red;">❌ "${example}" → Failed</div>`;
+                }
+            });
+            
+            document.getElementById('testResult').innerHTML = results;
+            document.getElementById('testResult').style.background = '#f8f9fa';
+            document.getElementById('testResult').style.color = '#212529';
+        }
+    </script>
+</body>
+</html>

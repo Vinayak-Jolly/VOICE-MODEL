@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Microphone Button Test</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --text-accent: #58a6ff;
+            --border-primary: #30363d;
+            --accent-primary: #238636;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 50px;
+        }
+        
+        .search-container {
+            display: flex !important;
+            align-items: center;
+            gap: 0;
+            margin: 20px 0;
+            border: 2px solid red; /* Debug border */
+        }
+        
+        input[type=text] {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px 0 0 8px;
+            padding: 12px 16px;
+            width: 350px;
+            font-size: 14px;
+            border-right: none;
+            height: 20px;
+            box-sizing: border-box;
+        }
+        
+        button.mic-button {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-primary) !important;
+            border-left: none !important;
+            border-radius: 0 8px 8px 0 !important;
+            padding: 12px !important;
+            cursor: pointer;
+            font-size: 16px !important;
+            transition: all 0.2s ease;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            min-width: 45px !important;
+            height: 44px !important;
+            margin: 0 !important;
+            border: 2px solid lime; /* Debug border */
+        }
+        
+        button.mic-button:hover {
+            background: var(--border-primary) !important;
+        }
+        
+        button.mic-button.recording {
+            background: #ef4444 !important;
+            color: white !important;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .debug-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-primary);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎤 Microphone Button Test</h1>
+    
+    <div class="debug-info">
+        <h3>Debug Information:</h3>
+        <p id="speechSupport">Speech Recognition Support: Checking...</p>
+        <p id="buttonVisibility">Button Visibility: Checking...</p>
+        <p id="clickTest">Click Test: Not tested</p>
+        <p id="recordingTest">Recording Test: Not tested</p>
+    </div>
+    
+    <div class="search-container">
+        <input id="icaoInput" type="text" placeholder="Enter airport codes or use voice input" />
+        <button id="micButton" class="mic-button" type="button" title="Voice input - Say two airport names">
+            <span id="micIcon">🎤</span>
+        </button>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Test Results:</h3>
+        <div id="testResults">No tests run yet...</div>
+    </div>
+    
+    <button onclick="runTests()" style="padding: 10px 20px; margin: 10px; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer;">
+        Run All Tests
+    </button>
+    
+    <script>
+        let recognition = null;
+        let isRecording = false;
+        
+        // Airport mapping (simplified for test)
+        const airportMapping = {
+            'delhi': 'VIDP', 'new delhi': 'VIDP',
+            'dubai': 'OMDB', 'dxb': 'OMDB',
+            'los angeles': 'KLAX', 'lax': 'KLAX',
+            'new york': 'KJFK', 'jfk': 'KJFK',
+            'london': 'EGLL', 'heathrow': 'EGLL',
+            'paris': 'LFPG', 'cdg': 'LFPG',
+        };
+        
+        function logTest(message, success = true) {
+            const results = document.getElementById('testResults');
+            const color = success ? 'lightgreen' : 'lightcoral';
+            results.innerHTML += `<div style="color: ${color}; margin: 5px 0;">${success ? '✅' : '❌'} ${message}</div>`;
+        }
+        
+        function runTests() {
+            document.getElementById('testResults').innerHTML = '<h4>Running Tests...</h4>';
+            
+            // Test 1: Check speech recognition support
+            const hasWebkitSpeech = 'webkitSpeechRecognition' in window;
+            const hasSpeech = 'SpeechRecognition' in window;
+            const speechSupported = hasWebkitSpeech || hasSpeech;
+            
+            document.getElementById('speechSupport').textContent = 
+                `Speech Recognition Support: ${speechSupported ? 'Supported' : 'Not Supported'} (webkit: ${hasWebkitSpeech}, standard: ${hasSpeech})`;
+            
+            logTest(`Speech Recognition API: ${speechSupported ? 'Available' : 'Not Available'}`, speechSupported);
+            
+            // Test 2: Check button visibility
+            const micButton = document.getElementById('micButton');
+            const micIcon = document.getElementById('micIcon');
+            const buttonVisible = micButton && micButton.offsetWidth > 0 && micButton.offsetHeight > 0;
+            
+            document.getElementById('buttonVisibility').textContent = 
+                `Button Visibility: ${buttonVisible ? 'Visible' : 'Hidden'} (${micButton ? micButton.offsetWidth : 0}x${micButton ? micButton.offsetHeight : 0})`;
+            
+            logTest(`Microphone Button: ${buttonVisible ? 'Visible' : 'Hidden'}`, buttonVisible);
+            logTest(`Microphone Icon: ${micIcon ? micIcon.textContent : 'Not found'}`, !!micIcon);
+            
+            // Test 3: Test click functionality
+            if (micButton) {
+                logTest('Button Click Handler: Ready', true);
+                document.getElementById('clickTest').textContent = 'Click Test: Ready - try clicking the mic button';
+            } else {
+                logTest('Button Click Handler: Button not found', false);
+            }
+            
+            // Test 4: Initialize speech recognition if supported
+            if (speechSupported) {
+                try {
+                    initSpeechRecognition();
+                    logTest('Speech Recognition: Initialized successfully', true);
+                } catch (error) {
+                    logTest(`Speech Recognition: Failed to initialize - ${error.message}`, false);
+                }
+            }
+            
+            // Test 5: Test voice conversion function
+            const testPhrases = ['Delhi to Dubai', 'Los Angeles to New York', 'London to Paris'];
+            testPhrases.forEach(phrase => {
+                const result = convertSpeechToICAO(phrase);
+                logTest(`Voice Conversion "${phrase}": ${result || 'FAILED'}`, !!result);
+            });
+        }
+        
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                throw new Error('Speech recognition not supported');
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = function() {
+                isRecording = true;
+                const micBtn = document.getElementById('micButton');
+                const micIcon = document.getElementById('micIcon');
+                micBtn.classList.add('recording');
+                micIcon.textContent = '🔴';
+                logTest('Recording: Started', true);
+                document.getElementById('recordingTest').textContent = 'Recording Test: Started successfully';
+            };
+            
+            recognition.onend = function() {
+                isRecording = false;
+                const micBtn = document.getElementById('micButton');
+                const micIcon = document.getElementById('micIcon');
+                micBtn.classList.remove('recording');
+                micIcon.textContent = '🎤';
+                logTest('Recording: Ended', true);
+            };
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase().trim();
+                logTest(`Speech Result: "${transcript}"`, true);
+                
+                const icaoCodes = convertSpeechToICAO(transcript);
+                if (icaoCodes) {
+                    document.getElementById('icaoInput').value = icaoCodes;
+                    logTest(`Converted to ICAO: ${icaoCodes}`, true);
+                } else {
+                    logTest(`Conversion failed for: "${transcript}"`, false);
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                logTest(`Speech Error: ${event.error}`, false);
+            };
+        }
+        
+        function convertSpeechToICAO(transcript) {
+            const text = transcript.toLowerCase();
+            
+            const patterns = [
+                /(.+?)\s+to\s+(.+)/,
+                /from\s+(.+?)\s+to\s+(.+)/,
+                /(.+?)\s+and\s+(.+)/,
+            ];
+            
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match && match.length >= 3) {
+                    const airport1 = match[1].trim();
+                    const airport2 = match[2].trim();
+                    
+                    const icao1 = airportMapping[airport1];
+                    const icao2 = airportMapping[airport2];
+                    
+                    if (icao1 && icao2) {
+                        return icao1 + ',' + icao2;
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        // Add click event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const micButton = document.getElementById('micButton');
+            
+            if (micButton) {
+                micButton.addEventListener('click', function() {
+                    logTest('Button clicked!', true);
+                    document.getElementById('clickTest').textContent = 'Click Test: Button clicked successfully';
+                    
+                    if (!recognition) {
+                        logTest('Speech recognition not initialized', false);
+                        return;
+                    }
+                    
+                    if (isRecording) {
+                        recognition.stop();
+                        logTest('Stopping recording...', true);
+                    } else {
+                        try {
+                            recognition.start();
+                            logTest('Starting recording...', true);
+                        } catch (error) {
+                            logTest(`Failed to start recording: ${error.message}`, false);
+                        }
+                    }
+                });
+            } else {
+                logTest('Microphone button not found in DOM', false);
+            }
+        });
+        
+        // Auto-run tests when page loads
+        window.addEventListener('load', function() {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>

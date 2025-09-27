@@ -1,0 +1,2478 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>AeroLish</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      /* Dark theme (default) */
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-card: #0b1220;
+      --text-primary: #e6edf3;
+      --text-secondary: #7d8590;
+      --text-accent: #58a6ff;
+      --border-primary: #30363d;
+      --border-secondary: #21262d;
+      --accent-primary: #238636;
+      --accent-secondary: #f85149;
+    }
+    
+    [data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --bg-tertiary: #eaeef2;
+      --bg-card: #ffffff;
+      --text-primary: #1f2328;
+      --text-secondary: #656d76;
+      --text-accent: #0969da;
+      --border-primary: #d0d7de;
+      --border-secondary: #eaeef2;
+      --accent-primary: #1a7f37;
+      --accent-secondary: #d1242f;
+    }
+    
+    body { 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary); 
+      color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    header { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 20px 32px; 
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .brand { 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .controls { 
+      display: flex; 
+      gap: 12px; 
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .theme-toggle {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      padding: 8px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--border-primary);
+    }
+    
+    .search-container {
+      position: relative;
+      display: flex !important;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+    }
+    
+    input[type=text] { 
+      background: var(--bg-tertiary); 
+      color: var(--text-primary); 
+      border: 1px solid var(--border-primary); 
+      border-radius: 8px 0 0 8px; 
+      padding: 12px 16px; 
+      width: 350px;
+      font-size: 14px;
+      border-right: none;
+      height: 20px;
+      box-sizing: border-box;
+    }
+    
+    button.mic-button {
+      background: var(--bg-tertiary) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-primary) !important;
+      border-left: none !important;
+      border-radius: 0 8px 8px 0 !important;
+      padding: 12px !important;
+      cursor: pointer;
+      font-size: 16px !important;
+      transition: all 0.2s ease;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      min-width: 45px !important;
+      height: 44px !important;
+      margin: 0 !important;
+      transform: none !important;
+      box-shadow: none !important;
+      background-image: none !important;
+      font-weight: normal !important;
+    }
+    
+    button.mic-button:hover {
+      background: var(--border-primary) !important;
+      color: var(--text-primary) !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    button.mic-button.recording {
+      background: #ef4444 !important;
+      color: white !important;
+      animation: pulse 1s infinite;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    button.mic-button.recording:hover {
+      background: #dc2626 !important;
+      transform: none !important;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    
+    input[type=text]:focus {
+      outline: none;
+      border-color: var(--text-accent);
+      box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.1);
+    }
+    
+    input[type=text]:focus + .mic-button {
+      border-color: var(--text-accent);
+    }
+    
+    .chip { 
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-tertiary); 
+      border: 1px solid var(--border-primary); 
+      border-radius: 20px; 
+      padding: 6px 12px; 
+      margin-right: 8px; 
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+    
+    .chip:hover {
+      background: var(--border-primary);
+    }
+    
+    .chip input[type=checkbox] {
+      margin-right: 6px;
+      accent-color: var(--accent-primary);
+    }
+    
+    button { 
+      background: linear-gradient(135deg, var(--accent-primary), #2ea043); 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      padding: 12px 20px; 
+      font-weight: 600; 
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+    }
+    
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .card { 
+      background: var(--bg-card); 
+      border: 1px solid var(--border-primary); 
+      border-radius: 12px; 
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .summary-banner { 
+      padding: 20px; 
+      border-radius: 12px; 
+      margin: 16px 0; 
+      font-weight: 600; 
+      text-align: center;
+      font-size: 16px;
+    }
+    
+    .summary-banner.go { 
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0); 
+      color: #15803d; 
+      border: 1px solid #22c55e;
+    }
+    
+    .summary-banner.caution { 
+      background: linear-gradient(135deg, #fef3c7, #fde68a); 
+      color: #a16207; 
+      border: 1px solid #eab308;
+    }
+    
+    .summary-banner.no-go { 
+      background: linear-gradient(135deg, #fecaca, #fca5a5); 
+      color: #b91c1c; 
+      border: 1px solid #ef4444;
+    }
+    
+    .summary-banner.unknown { 
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb); 
+      color: #6b7280; 
+      border: 1px solid #9ca3af;
+    }
+    
+    [data-theme="light"] .summary-banner.go {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      color: #15803d;
+    }
+    
+    [data-theme="light"] .summary-banner.caution {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #a16207;
+    }
+    
+    [data-theme="light"] .summary-banner.no-go {
+      background: linear-gradient(135deg, #fecaca, #fca5a5);
+      color: #b91c1c;
+    }
+    
+    .conditions-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+      gap: 12px;
+      margin: 16px 0;
+    }
+    
+    .condition-item { 
+      background: var(--bg-secondary); 
+      border: 1px solid var(--border-primary); 
+      border-radius: 8px; 
+      padding: 12px; 
+      text-align: center;
+    }
+    
+    .condition-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .condition-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 4px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 24px 0 12px 0;
+      color: var(--text-primary);
+    }
+    
+    .hidden { display: none !important; }
+    
+    details {
+      margin: 8px 0;
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    summary {
+      cursor: pointer;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      font-weight: 500;
+      color: var(--text-accent);
+      border-bottom: 1px solid var(--border-primary);
+    }
+    
+    details[open] summary {
+      border-bottom: 1px solid var(--border-primary);
+    }
+    
+    details .content {
+      padding: 16px;
+      background: var(--bg-card);
+    }
+    
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 8px 0;
+    }
+    
+    #map { 
+      height: 400px; 
+      border-radius: 12px; 
+      border: 1px solid var(--border-primary);
+    }
+    
+    .map-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .map-controls button {
+      font-size: 12px;
+      padding: 6px 12px;
+      margin: 0;
+    }
+    
+    .route-summary {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    
+    .route-banner {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .product-focus {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>✈️</span>
+      <span>AeroLish</span>
+    </div>
+    <div class="controls">
+      <div class="search-container" style="position: relative; display: flex; align-items: center;">
+        <input id="icaoInput" type="text" placeholder="Enter airport codes (e.g., KLAX, EGLL) or use voice input"/>
+        <button id="micButton" class="mic-button" type="button" title="Voice input - Say two airport names" 
+                style="background: var(--bg-tertiary) !important; color: var(--text-primary) !important; border: 1px solid var(--border-primary) !important; border-left: none !important; border-radius: 0 8px 8px 0 !important; padding: 12px !important; font-size: 16px !important; display: flex !important; align-items: center; justify-content: center; min-width: 45px !important; height: 44px !important; margin: 0 !important; transform: none !important; box-shadow: none !important; background-image: none !important; font-weight: normal !important; cursor: pointer;">
+          <span id="micIcon">🎤</span>
+        </button>
+      </div>
+      <div id="voiceStatus" style="font-size: 12px; color: var(--text-secondary); margin-left: 10px; display: none;"></div>
+      <label class="chip"><input id="wantMetar" type="checkbox" checked>METAR</label>
+      <label class="chip"><input id="wantTaf" type="checkbox">TAF</label>
+      <label class="chip"><input id="wantPirep" type="checkbox">PIREP</label>
+      <label class="chip"><input id="wantNotam" type="checkbox">NOTAM</label>
+      <label class="chip"><input id="wantSigmet" type="checkbox">SIGMET</label>
+      <label class="chip"><input id="wantAirmet" type="checkbox">AIRMET</label>
+      <button id="analyzeBtn">Get Weather</button>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="main-content">
+      <div class="card">
+        <div id="routeBanner" class="route-banner hidden">Overall: —</div>
+        <div id="productFocus" class="product-focus"></div>
+
+        <div id="routeSummary" class="route-summary hidden">
+          <div class="section-title">Route Analysis</div>
+          <div id="routeSummaryText">Enter airport codes to begin analysis...</div>
+        </div>
+
+        <div id="singleSection" class="hidden">
+          <div id="overallSummary" class="summary-banner"></div>
+          
+          <div class="section-title">Current Conditions</div>
+          <div class="conditions-grid">
+            <div class="condition-item">
+              <div class="condition-label">Station</div>
+              <div class="condition-value" id="stationInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Time</div>
+              <div class="condition-value" id="timeInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Wind</div>
+              <div class="condition-value" id="windInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Visibility</div>
+              <div class="condition-value" id="visInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Clouds</div>
+              <div class="condition-value" id="cloudInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Temperature</div>
+              <div class="condition-value" id="tempInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Pressure</div>
+              <div class="condition-value" id="qnhInfo">—</div>
+            </div>
+            <div class="condition-item">
+              <div class="condition-label">Trend</div>
+              <div class="condition-value" id="trendInfo">—</div>
+            </div>
+          </div>
+          
+          <details>
+            <summary>Operational Analysis</summary>
+            <div class="content">
+              <div id="operationalTakeaway"></div>
+              <br>
+              <div id="recommendationsDetailed"></div>
+            </div>
+          </details>
+          
+          <details>
+            <summary>Data Type Summaries</summary>
+            <div class="content">
+              <div id="dataTypeDropdowns"></div>
+            </div>
+          </details>
+          
+          <details>
+            <summary>Detailed Analysis</summary>
+            <div class="content">
+              <details>
+                <summary>Field-by-field Decode</summary>
+                <div class="content"><pre id="decodeBox"></pre></div>
+              </details>
+              <details>
+                <summary>Operational Implications</summary>
+                <div class="content"><pre id="opsBox"></pre></div>
+              </details>
+              <details>
+                <summary>Numbers Summary</summary>
+                <div class="content"><pre id="numsBox"></pre></div>
+              </details>
+            </div>
+          </details>
+
+          <details>
+            <summary>Raw Data & Advisories</summary>
+            <div class="content">
+              <pre id="rawMetar"></pre>
+              <pre id="sigmetBox"></pre>
+              <pre id="airmetBox"></pre>
+            </div>
+          </details>
+        </div>
+
+        <div id="routeNodes" class="hidden">
+          <div class="section-title">Route Airports</div>
+          <div id="nodesGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Aviation Weather Map</div>
+        <div class="map-controls" style="margin-bottom: 12px;">
+          <button id="showClouds" class="chip" style="background:var(--accent-primary); color:white; border:none;">☁️ Clouds</button>
+          <button id="showPrecip" class="chip" style="background:#1e40af; color:white; border:none;">🌧️ Precipitation</button>
+          <button id="showWind" class="chip" style="background:#059669; color:white; border:none;">💨 Wind</button>
+        </div>
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const APIBASEURL = "/api";
+    const OPENWEATHER_API_KEY = 'your_api_key_here'; // Replace with actual key
+    let map, weatherLayer;
+    let recognition = null;
+    let isRecording = false;
+    
+    // Airport name to ICAO code mapping
+    const airportMapping = {
+      // Major US airports
+      'los angeles': 'KLAX', 'lax': 'KLAX', 'la': 'KLAX',
+      'new york': 'KJFK', 'jfk': 'KJFK', 'kennedy': 'KJFK',
+      'newark': 'KEWR', 'ewr': 'KEWR',
+      'laguardia': 'KLGA', 'lga': 'KLGA',
+      'chicago': 'KORD', 'ohare': 'KORD', 'ord': 'KORD',
+      'midway': 'KMDW', 'mdw': 'KMDW',
+      'san francisco': 'KSFO', 'sfo': 'KSFO',
+      'miami': 'KMIA', 'mia': 'KMIA',
+      'atlanta': 'KATL', 'atl': 'KATL',
+      'dallas': 'KDFW', 'dfw': 'KDFW',
+      'houston': 'KIAH', 'iah': 'KIAH',
+      'denver': 'KDEN', 'den': 'KDEN',
+      'seattle': 'KSEA', 'sea': 'KSEA',
+      'phoenix': 'KPHX', 'phx': 'KPHX',
+      'las vegas': 'KLAS', 'vegas': 'KLAS', 'las': 'KLAS',
+      'boston': 'KBOS', 'bos': 'KBOS',
+      'washington': 'KDCA', 'reagan': 'KDCA', 'dca': 'KDCA',
+      'dulles': 'KIAD', 'iad': 'KIAD',
+      'baltimore': 'KBWI', 'bwi': 'KBWI',
+      'orlando': 'KMCO', 'mco': 'KMCO',
+      'tampa': 'KTPA', 'tpa': 'KTPA',
+      'fort lauderdale': 'KFLL', 'fll': 'KFLL',
+      'philadelphia': 'KPHL', 'phl': 'KPHL',
+      'detroit': 'KDTW', 'dtw': 'KDTW',
+      'minneapolis': 'KMSP', 'msp': 'KMSP',
+      'salt lake city': 'KSLC', 'slc': 'KSLC',
+      'portland': 'KPDX', 'pdx': 'KPDX',
+      'san diego': 'KSAN', 'san': 'KSAN',
+      'nashville': 'KBNA', 'bna': 'KBNA',
+      'charlotte': 'KCLT', 'clt': 'KCLT',
+      'raleigh': 'KRDU', 'rdu': 'KRDU',
+      'memphis': 'KMEM', 'mem': 'KMEM',
+      'kansas city': 'KMCI', 'mci': 'KMCI',
+      'st louis': 'KSTL', 'stl': 'KSTL', 'saint louis': 'KSTL',
+      'pittsburgh': 'KPIT', 'pit': 'KPIT',
+      'cleveland': 'KCLE', 'cle': 'KCLE',
+      'cincinnati': 'KCVG', 'cvg': 'KCVG',
+      'columbus': 'KCMH', 'cmh': 'KCMH',
+      'milwaukee': 'KMKE', 'mke': 'KMKE',
+      'indianapolis': 'KIND', 'ind': 'KIND',
+      'jacksonville': 'KJAX', 'jax': 'KJAX',
+      'new orleans': 'KMSY', 'msy': 'KMSY',
+      'austin': 'KAUS', 'aus': 'KAUS',
+      'san antonio': 'KSAT', 'sat': 'KSAT',
+      'honolulu': 'PHNL', 'hnl': 'PHNL',
+      'anchorage': 'PANC', 'anc': 'PANC',
+      
+      // Major European airports
+      'london': 'EGLL', 'heathrow': 'EGLL', 'lhr': 'EGLL',
+      'gatwick': 'EGKK', 'lgw': 'EGKK',
+      'stansted': 'EGSS', 'stn': 'EGSS',
+      'luton': 'EGGW', 'ltn': 'EGGW',
+      'paris': 'LFPG', 'charles de gaulle': 'LFPG', 'cdg': 'LFPG',
+      'orly': 'LFPO', 'ory': 'LFPO',
+      'amsterdam': 'EHAM', 'schiphol': 'EHAM', 'ams': 'EHAM',
+      'frankfurt': 'EDDF', 'fra': 'EDDF',
+      'munich': 'EDDM', 'muc': 'EDDM',
+      'berlin': 'EDDB', 'ber': 'EDDB',
+      'zurich': 'LSZH', 'zur': 'LSZH',
+      'vienna': 'LOWW', 'vie': 'LOWW',
+      'madrid': 'LEMD', 'mad': 'LEMD',
+      'barcelona': 'LEBL', 'bcn': 'LEBL',
+      'rome': 'LIRF', 'fiumicino': 'LIRF', 'fco': 'LIRF',
+      'milan': 'LIMC', 'malpensa': 'LIMC', 'mxp': 'LIMC',
+      'copenhagen': 'EKCH', 'cph': 'EKCH',
+      'stockholm': 'ESSA', 'arlanda': 'ESSA', 'arn': 'ESSA',
+      'oslo': 'ENGM', 'osl': 'ENGM',
+      'helsinki': 'EFHK', 'hel': 'EFHK',
+      'brussels': 'EBBR', 'bru': 'EBBR',
+      'lisbon': 'LPPT', 'lis': 'LPPT',
+      'dublin': 'EIDW', 'dub': 'EIDW',
+      'manchester': 'EGCC', 'man': 'EGCC',
+      'edinburgh': 'EGPH', 'edi': 'EGPH',
+      'glasgow': 'EGPF', 'gla': 'EGPF',
+      'birmingham': 'EGBB', 'bhx': 'EGBB',
+      'lyon': 'LFLL', 'lys': 'LFLL',
+      'nice': 'LFMN', 'nce': 'LFMN',
+      'marseille': 'LFML', 'mrs': 'LFML',
+      'toulouse': 'LFBO', 'tls': 'LFBO',
+      
+      // Major Asian airports
+      'delhi': 'VIDP', 'new delhi': 'VIDP', 'del': 'VIDP',
+      'mumbai': 'VABB', 'bombay': 'VABB', 'bom': 'VABB',
+      'bangalore': 'VOBL', 'bengaluru': 'VOBL', 'blr': 'VOBL',
+      'chennai': 'VOMM', 'madras': 'VOMM', 'maa': 'VOMM',
+      'kolkata': 'VECC', 'calcutta': 'VECC', 'ccu': 'VECC',
+      'hyderabad': 'VOHS', 'hyd': 'VOHS',
+      'pune': 'VAPO', 'pnq': 'VAPO',
+      'ahmedabad': 'VAAH', 'amd': 'VAAH',
+      'kochi': 'VOCI', 'cochin': 'VOCI', 'cok': 'VOCI',
+      'goa': 'VOGO', 'goi': 'VOGO',
+      
+      'dubai': 'OMDB', 'dxb': 'OMDB',
+      'abu dhabi': 'OMAA', 'auh': 'OMAA',
+      'sharjah': 'OMSJ', 'shj': 'OMSJ',
+      'doha': 'OTHH', 'doh': 'OTHH',
+      'kuwait': 'OKBK', 'kwi': 'OKBK',
+      'riyadh': 'OERK', 'ruh': 'OERK',
+      'jeddah': 'OEJN', 'jed': 'OEJN',
+      'dammam': 'OEDF', 'dmm': 'OEDF',
+      'muscat': 'OOMS', 'mct': 'OOMS',
+      'bahrain': 'OBBI', 'bah': 'OBBI',
+      
+      'tokyo': 'RJTT', 'haneda': 'RJTT', 'hnd': 'RJTT',
+      'narita': 'RJAA', 'nrt': 'RJAA',
+      'osaka': 'RJBB', 'kansai': 'RJBB', 'kix': 'RJBB',
+      'nagoya': 'RJGG', 'ngo': 'RJGG',
+      'seoul': 'RKSI', 'incheon': 'RKSI', 'icn': 'RKSI',
+      'gimpo': 'RKSS', 'gmp': 'RKSS',
+      'busan': 'RKPK', 'pus': 'RKPK',
+      'beijing': 'ZBAA', 'capital': 'ZBAA', 'pek': 'ZBAA',
+      'daxing': 'ZBAD', 'pkx': 'ZBAD',
+      'shanghai': 'ZSPD', 'pudong': 'ZSPD', 'pvg': 'ZSPD',
+      'hongqiao': 'ZSSS', 'sha': 'ZSSS',
+      'guangzhou': 'ZGGG', 'can': 'ZGGG',
+      'shenzhen': 'ZGSZ', 'szx': 'ZGSZ',
+      'chengdu': 'ZUUU', 'ctu': 'ZUUU',
+      'xian': 'ZLXY', 'xiy': 'ZLXY',
+      'hangzhou': 'ZSHC', 'hgh': 'ZSHC',
+      'nanjing': 'ZSNJ', 'nkg': 'ZSNJ',
+      'qingdao': 'ZSQD', 'tao': 'ZSQD',
+      'tianjin': 'ZBTJ', 'tsn': 'ZBTJ',
+      'wuhan': 'ZHHH', 'wuh': 'ZHHH',
+      'kunming': 'ZPPP', 'kmg': 'ZPPP',
+      
+      'hong kong': 'VHHH', 'hkg': 'VHHH',
+      'macau': 'VMMC', 'mfm': 'VMMC',
+      'taipei': 'RCTP', 'taoyuan': 'RCTP', 'tpe': 'RCTP',
+      'kaohsiung': 'RCKH', 'khh': 'RCKH',
+      'singapore': 'WSSS', 'changi': 'WSSS', 'sin': 'WSSS',
+      'kuala lumpur': 'WMKK', 'kul': 'WMKK',
+      'bangkok': 'VTBS', 'suvarnabhumi': 'VTBS', 'bkk': 'VTBS',
+      'don mueang': 'VTBD', 'dmk': 'VTBD',
+      'phuket': 'VTSP', 'hkt': 'VTSP',
+      'manila': 'RPLL', 'ninoy aquino': 'RPLL', 'mnl': 'RPLL',
+      'cebu': 'RPVM', 'ceb': 'RPVM',
+      'jakarta': 'WIII', 'soekarno hatta': 'WIII', 'cgk': 'WIII',
+      'surabaya': 'WARR', 'mlg': 'WARR',
+      'bali': 'WADD', 'denpasar': 'WADD', 'dps': 'WADD',
+      'ho chi minh': 'VVTS', 'saigon': 'VVTS', 'sgn': 'VVTS',
+      'hanoi': 'VVNB', 'han': 'VVNB',
+      'phnom penh': 'VDPP', 'pnh': 'VDPP',
+      'yangon': 'VYYY', 'rangoon': 'VYYY', 'rgn': 'VYYY',
+      'dhaka': 'VGHS', 'dac': 'VGHS',
+      'karachi': 'OPKC', 'khi': 'OPKC',
+      'lahore': 'OPLA', 'lhe': 'OPLA',
+      'islamabad': 'OPIS', 'isb': 'OPIS',
+      'colombo': 'VCBI', 'cmb': 'VCBI',
+      'kathmandu': 'VNKT', 'ktm': 'VNKT',
+      'male': 'VRMM', 'mle': 'VRMM',
+      
+      // Major Middle Eastern airports
+      'tehran': 'OIIE', 'imam khomeini': 'OIIE', 'ika': 'OIIE',
+      'mehrabad': 'OIII', 'thr': 'OIII',
+      'istanbul': 'LTFM', 'ataturk': 'LTFM', 'ist': 'LTFM',
+      'sabiha gokcen': 'LTFJ', 'saw': 'LTFJ',
+      'ankara': 'LTAC', 'esb': 'LTAC',
+      'antalya': 'LTAI', 'ayt': 'LTAI',
+      'izmir': 'LTBJ', 'adb': 'LTBJ',
+      'tel aviv': 'LLBG', 'ben gurion': 'LLBG', 'tlv': 'LLBG',
+      'beirut': 'OLBA', 'bey': 'OLBA',
+      'amman': 'OJAI', 'queen alia': 'OJAI', 'amm': 'OJAI',
+      'baghdad': 'ORBI', 'bgw': 'ORBI',
+      'basra': 'ORMM', 'bsr': 'ORMM',
+      'erbil': 'ORER', 'eil': 'ORER',
+      'damascus': 'OSDI', 'dam': 'OSDI',
+      'aleppo': 'OSAP', 'alp': 'OSAP',
+      'sanaa': 'OYSN', 'sah': 'OYSN',
+      'aden': 'OYAA', 'ade': 'OYAA',
+      
+      // Major African airports
+      'cairo': 'HECA', 'cai': 'HECA',
+      'alexandria': 'HEBA', 'aly': 'HEBA',
+      'casablanca': 'GMMN', 'mohammed v': 'GMMN', 'cmn': 'GMMN',
+      'marrakech': 'GMMX', 'rak': 'GMMX',
+      'rabat': 'GMME', 'rba': 'GMME',
+      'tunis': 'DTTA', 'tun': 'DTTA',
+      'algiers': 'DAAG', 'alg': 'DAAG',
+      'oran': 'DAOO', 'orn': 'DAOO',
+      'tripoli': 'HLLT', 'tip': 'HLLT',
+      'benghazi': 'HLLB', 'bnx': 'HLLB',
+      'addis ababa': 'HAAB', 'add': 'HAAB',
+      'nairobi': 'HKJK', 'jomo kenyatta': 'HKJK', 'nbo': 'HKJK',
+      'dar es salaam': 'HTDA', 'dar': 'HTDA',
+      'kilimanjaro': 'HTKJ', 'jro': 'HTKJ',
+      'kampala': 'HUEN', 'entebbe': 'HUEN', 'ebb': 'HUEN',
+      'kigali': 'HRYR', 'kgl': 'HRYR',
+      'bujumbura': 'HBBA', 'bjm': 'HBBA',
+      'djibouti': 'HDAM', 'jib': 'HDAM',
+      'mogadishu': 'HCMM', 'mgq': 'HCMM',
+      'khartoum': 'HSSS', 'krt': 'HSSS',
+      'johannesburg': 'FAOR', 'or tambo': 'FAOR', 'jnb': 'FAOR',
+      'cape town': 'FACT', 'cpt': 'FACT',
+      'durban': 'FALE', 'dbn': 'FALE',
+      'port elizabeth': 'FAPE', 'plt': 'FAPE',
+      'bloemfontein': 'FABL', 'bfn': 'FABL',
+      'windhoek': 'FYWH', 'wdh': 'FYWH',
+      'gaborone': 'FBSK', 'gbe': 'FBSK',
+      'maseru': 'FXMM', 'msu': 'FXMM',
+      'maputo': 'FQMA', 'mpm': 'FQMA',
+      'harare': 'FVHA', 'hre': 'FVHA',
+      'bulawayo': 'FVBU', 'buw': 'FVBU',
+      'lusaka': 'FLLS', 'lun': 'FLLS',
+      'lilongwe': 'FWKI', 'llw': 'FWKI',
+      'antananarivo': 'FMMI', 'tnr': 'FMMI',
+      'port louis': 'FIMP', 'mru': 'FIMP',
+      'abidjan': 'DIAP', 'abj': 'DIAP',
+      'accra': 'DGAA', 'acc': 'DGAA',
+      'lagos': 'DNMM', 'los': 'DNMM',
+      'abuja': 'DNAA', 'abv': 'DNAA',
+      'kano': 'DNKN', 'kan': 'DNKN',
+      'port harcourt': 'DNPO', 'pht': 'DNPO',
+      'douala': 'FKKD', 'dla': 'FKKD',
+      'yaounde': 'FKYS', 'nsm': 'FKYS',
+      'libreville': 'FOOL', 'lbv': 'FOOL',
+      'brazzaville': 'FCBB', 'bzv': 'FCBB',
+      'kinshasa': 'FZAA', 'fia': 'FZAA',
+      'lubumbashi': 'FZQA', 'fbn': 'FZQA',
+      'bangui': 'FEFF', 'bgf': 'FEFF',
+      'ndjamena': 'FTTJ', 'ndj': 'FTTJ',
+      'niamey': 'DRRN', 'nim': 'DRRN',
+      'ouagadougou': 'DFFD', 'oup': 'DFFD',
+      'bamako': 'GABS', 'bko': 'GABS',
+      'conakry': 'GUCY', 'cky': 'GUCY',
+      'freetown': 'GFLL', 'flw': 'GFLL',
+      'monrovia': 'GLRB', 'rob': 'GLRB',
+      'dakar': 'GOOY', 'dkr': 'GOOY',
+      'banjul': 'GBYD', 'bjl': 'GBYD',
+      'bissau': 'GGOV', 'oxb': 'GGOV',
+      'praia': 'GVNP', 'rai': 'GVNP',
+      
+      // Major Oceanian airports
+      'sydney': 'YSSY', 'syd': 'YSSY',
+      'melbourne': 'YMML', 'tullamarine': 'YMML', 'mel': 'YMML',
+      'brisbane': 'YBBN', 'bne': 'YBBN',
+      'perth': 'YPPH', 'per': 'YPPH',
+      'adelaide': 'YPAD', 'adl': 'YPAD',
+      'darwin': 'YPDN', 'drw': 'YPDN',
+      'hobart': 'YMHB', 'hba': 'YMHB',
+      'canberra': 'YSCB', 'cbr': 'YSCB',
+      'gold coast': 'YBCG', 'ool': 'YBCG',
+      'cairns': 'YBCS', 'cns': 'YBCS',
+      'townsville': 'YBTL', 'tsv': 'YBTL',
+      'alice springs': 'YBAS', 'asp': 'YBAS',
+      'ayers rock': 'YAYE', 'uluru': 'YAYE', 'ayr': 'YAYE',
+      'auckland': 'NZAA', 'akl': 'NZAA',
+      'wellington': 'NZWN', 'wlg': 'NZWN',
+      'christchurch': 'NZCH', 'chc': 'NZCH',
+      'queenstown': 'NZQN', 'zqn': 'NZQN',
+      'rotorua': 'NZRO', 'rot': 'NZRO',
+      'hamilton': 'NZHN', 'hlz': 'NZHN',
+      'dunedin': 'NZDN', 'dud': 'NZDN',
+      'napier': 'NZNP', 'npr': 'NZNP',
+      'palmerston north': 'NZPM', 'pmr': 'NZPM',
+      'new plymouth': 'NZNL', 'npl': 'NZNL',
+      'invercargill': 'NZNV', 'ivc': 'NZNV',
+      'nelson': 'NZNS', 'nsn': 'NZNS',
+      'blenheim': 'NZBN', 'blm': 'NZBN',
+      'timaru': 'NZTU', 'tiu': 'NZTU',
+      'whangarei': 'NZWR', 'wrr': 'NZWR',
+      'tauranga': 'NZTG', 'trg': 'NZTG',
+      'gisborne': 'NZGS', 'gis': 'NZGS',
+      'suva': 'NFNA', 'suv': 'NFNA',
+      'nadi': 'NFFN', 'nan': 'NFFN',
+      'port vila': 'NVVV', 'vli': 'NVVV',
+      'noumea': 'NWWW', 'nou': 'NWWW',
+      'papeete': 'NTAA', 'tahiti': 'NTAA', 'ppt': 'NTAA',
+      'apia': 'NSFA', 'apw': 'NSFA',
+      'port moresby': 'AYPY', 'pom': 'AYPY',
+      'lae': 'AYNZ', 'lag': 'AYNZ',
+      'madang': 'AYMD', 'mag': 'AYMD',
+      'wewak': 'AYWK', 'wwk': 'AYWK',
+      'vanimo': 'AYVN', 'vai': 'AYVN',
+      'daru': 'AYDU', 'drx': 'AYDU',
+      'kerema': 'AYKM', 'kma': 'AYKM',
+      'popondetta': 'AYPO', 'pnp': 'AYPO',
+      'tari': 'AYTA', 'tri': 'AYTA',
+      'tabubil': 'AYTB', 'tbi': 'AYTB',
+      'kiunga': 'AYKI', 'uga': 'AYKI',
+      'goroka': 'AYGK', 'gka': 'AYGK',
+      'mount hagen': 'AYMH', 'hgn': 'AYMH',
+      'mendi': 'AYMI', 'mdi': 'AYMI',
+      'wabag': 'AYWG', 'wbm': 'AYWG',
+      'kundiawa': 'AYKW', 'kun': 'AYKW',
+      'kerema': 'AYKM', 'kma': 'AYKM',
+      'balimo': 'AYBA', 'blo': 'AYBA',
+      'daru': 'AYDU', 'drx': 'AYDU',
+      'kikori': 'AYKO', 'kor': 'AYKO',
+      
+      // Major South American airports
+      'sao paulo': 'SBGR', 'guarulhos': 'SBGR', 'gru': 'SBGR',
+      'congonhas': 'SBSP', 'cgh': 'SBSP',
+      'rio de janeiro': 'SBGL', 'galeao': 'SBGL', 'gig': 'SBGL',
+      'santos dumont': 'SBRJ', 'sdu': 'SBRJ',
+      'brasilia': 'SBBR', 'bsb': 'SBBR',
+      'salvador': 'SBSV', 'ssa': 'SBSV',
+      'recife': 'SBRF', 'rec': 'SBRF',
+      'fortaleza': 'SBFZ', 'for': 'SBFZ',
+      'belo horizonte': 'SBCF', 'cnf': 'SBCF',
+      'porto alegre': 'SBPA', 'poa': 'SBPA',
+      'curitiba': 'SBCT', 'cwb': 'SBCT',
+      'florianopolis': 'SBFL', 'fln': 'SBFL',
+      'natal': 'SBNT', 'nat': 'SBNT',
+      'joao pessoa': 'SBJP', 'jpa': 'SBJP',
+      'maceio': 'SBMO', 'mcz': 'SBMO',
+      'aracaju': 'SBAR', 'aju': 'SBAR',
+      'vitoria': 'SBVT', 'vix': 'SBVT',
+      'goiania': 'SBGO', 'gyn': 'SBGO',
+      'campo grande': 'SBCG', 'cgr': 'SBCG',
+      'cuiaba': 'SBCY', 'cuy': 'SBCY',
+      'manaus': 'SBMN', 'mao': 'SBMN',
+      'belem': 'SBBE', 'blm': 'SBBE',
+      'macapa': 'SBMQ', 'mcp': 'SBMQ',
+      'boa vista': 'SBBV', 'bvb': 'SBBV',
+      'rio branco': 'SBRB', 'rbr': 'SBRB',
+      'porto velho': 'SBPV', 'pvh': 'SBPV',
+      'palmas': 'SBPN', 'pmw': 'SBPN',
+      'teresina': 'SBTE', 'the': 'SBTE',
+      'sao luis': 'SBSL', 'slz': 'SBSL',
+      'imperatriz': 'SBIZ', 'ipz': 'SBIZ',
+      'maraba': 'SBMA', 'mab': 'SBMA',
+      'santarem': 'SBSN', 'stm': 'SBSN',
+      'altamira': 'SBAT', 'atm': 'SBAT',
+      'tabatinga': 'SBTT', 'tbr': 'SBTT',
+      'cruzeiro do sul': 'SBCZ', 'czs': 'SBCZ',
+      'tarauaca': 'SBTK', 'trq': 'SBTK',
+      'feijo': 'SBFJ', 'fej': 'SBFJ',
+      'sena madureira': 'SNSM', 'snm': 'SNSM',
+      'xapuri': 'SBXP', 'xap': 'SBXP',
+      'brasileia': 'SBBR', 'brb': 'SBBR',
+      'epitaciolandia': 'SBEP', 'epl': 'SBEP',
+      'assis brasil': 'SBAB', 'asb': 'SBAB',
+      'caracas': 'SVMI', 'maiquetia': 'SVMI', 'ccs': 'SVMI',
+      'maracaibo': 'SVMC', 'mcy': 'SVMC',
+      'valencia': 'SVVA', 'vln': 'SVVA',
+      'barquisimeto': 'SVBM', 'bqt': 'SVBM',
+      'merida': 'SVMD', 'mjd': 'SVMD',
+      'san antonio': 'SVSA', 'sva': 'SVSA',
+      'puerto ordaz': 'SVPR', 'pzo': 'SVPR',
+      'ciudad bolivar': 'SVCB', 'cbl': 'SVCB',
+      'maturin': 'SVMT', 'mun': 'SVMT',
+      'barcelona': 'SVBC', 'blc': 'SVBC',
+      'cumana': 'SVCM', 'cum': 'SVCM',
+      'porlamar': 'SVPM', 'pmv': 'SVPM',
+      'coro': 'SVCO', 'cor': 'SVCO',
+      'las piedras': 'SVLP', 'lsp': 'SVLP',
+      'santo domingo': 'SVSO', 'std': 'SVSO',
+      'guasdualito': 'SVGD', 'gud': 'SVGD',
+      'elorza': 'SVEL', 'elz': 'SVEL',
+      'barrancas': 'SVBC', 'brr': 'SVBC',
+      'san fernando': 'SVSF', 'snf': 'SVSF',
+      'tucupita': 'SVTC', 'tcp': 'SVTC',
+      'tumeremo': 'SVTM', 'tmr': 'SVTM',
+      'santa elena': 'SVSE', 'sln': 'SVSE',
+      'ciudad guayana': 'SVCG', 'cgy': 'SVCG',
+      'upata': 'SVUP', 'upt': 'SVUP',
+      'el tigre': 'SVET', 'tig': 'SVET',
+      'anaco': 'SVAN', 'anc': 'SVAN',
+      'el vigia': 'SVEV', 'vig': 'SVEV',
+      'machiques': 'SVMQ', 'maq': 'SVMQ',
+      'carora': 'SVCA', 'car': 'SVCA',
+      'acarigua': 'SVAC', 'acr': 'SVAC',
+      'guanare': 'SVGU', 'gun': 'SVGU',
+      'san carlos': 'SVSC', 'scs': 'SVSC',
+      'calabozo': 'SVCL', 'clb': 'SVCL',
+      'valle de la pascua': 'SVVP', 'vlp': 'SVVP',
+      'zaraza': 'SVZA', 'zar': 'SVZA',
+      'bogota': 'SKBO', 'el dorado': 'SKBO', 'bog': 'SKBO',
+      'medellin': 'SKMD', 'rionegro': 'SKMD', 'mde': 'SKMD',
+      'cali': 'SKCL', 'alfonso bonilla aragon': 'SKCL', 'clo': 'SKCL',
+      'cartagena': 'SKCG', 'rafael nunez': 'SKCG', 'ctg': 'SKCG',
+      'barranquilla': 'SKBQ', 'ernesto cortissoz': 'SKBQ', 'baq': 'SKBQ',
+      'bucaramanga': 'SKBU', 'palonegro': 'SKBU', 'bug': 'SKBU',
+      'cucuta': 'SKCC', 'camilo daza': 'SKCC', 'cuc': 'SKCC',
+      'santa marta': 'SKSM', 'simon bolivar': 'SKSM', 'smt': 'SKSM',
+      'valledupar': 'SKVD', 'alfonso lopez pumarejo': 'SKVD', 'vup': 'SKVD',
+      'monteria': 'SKMR', 'los garzones': 'SKMR', 'mtr': 'SKMR',
+      'riohacha': 'SKRH', 'almirante padilla': 'SKRH', 'rch': 'SKRH',
+      'armenia': 'SKAR', 'el eden': 'SKAR', 'axm': 'SKAR',
+      'pereira': 'SKPE', 'matecana': 'SKPE', 'pei': 'SKPE',
+      'manizales': 'SKMZ', 'la nubia': 'SKMZ', 'mnz': 'SKMZ',
+      'ibague': 'SKIB', 'perales': 'SKIB', 'ibg': 'SKIB',
+      'neiva': 'SKNV', 'benito salas': 'SKNV', 'nva': 'SKNV',
+      'popayan': 'SKPP', 'guillermo leon valencia': 'SKPP', 'pop': 'SKPP',
+      'pasto': 'SKPS', 'antonio narino': 'SKPS', 'pst': 'SKPS',
+      'villavicencio': 'SKVV', 'vanguardia': 'SKVV', 'vvc': 'SKVV',
+      'yopal': 'SKYP', 'el alcaravan': 'SKYP', 'yop': 'SKYP',
+      'arauca': 'SKAU', 'santiago perez': 'SKAU', 'auc': 'SKAU',
+      'leticia': 'SKLT', 'vasquez cobo': 'SKLT', 'let': 'SKLT',
+      'san andres': 'SKSP', 'gustavo rojas pinilla': 'SKSP', 'adz': 'SKSP',
+      'providencia': 'SKPV', 'el embrujo': 'SKPV', 'pvd': 'SKPV',
+      'quito': 'SEQM', 'mariscal sucre': 'SEQM', 'uio': 'SEQM',
+      'guayaquil': 'SEGU', 'jose joaquin de olmedo': 'SEGU', 'gye': 'SEGU',
+      'cuenca': 'SECU', 'mariscal lamar': 'SECU', 'cue': 'SECU',
+      'manta': 'SEMT', 'eloy alfaro': 'SEMT', 'mec': 'SEMT',
+      'esmeraldas': 'SEES', 'coronel carlos concha torres': 'SEES', 'esm': 'SEES',
+      'loja': 'SELO', 'ciudad de catamayo': 'SELO', 'loj': 'SELO',
+      'machala': 'SEMH', 'general manuel serrano': 'SEMH', 'mch': 'SEMH',
+      'tulcan': 'SETU', 'teniente coronel luis a mantilla': 'SETU', 'tua': 'SETU',
+      'nueva loja': 'SELN', 'lago agrio': 'SELN', 'lgo': 'SELN',
+      'coca': 'SECO', 'francisco de orellana': 'SECO', 'oca': 'SECO',
+      'tena': 'SETE', 'jumandy': 'SETE', 'tna': 'SETE',
+      'puyo': 'SEPU', 'rio amazonas': 'SEPU', 'pyo': 'SEPU',
+      'macas': 'SEMC', 'coronel edmundo carvajal': 'SEMC', 'xms': 'SEMC',
+      'gualaquiza': 'SEGU', 'gaq': 'SEGU',
+      'zamora': 'SEZA', 'zam': 'SEZA',
+      'santa rosa': 'SESR', 'sor': 'SESR',
+      'salinas': 'SESA', 'sal': 'SESA',
+      'la toma': 'SELT', 'ltx': 'SELT',
+      'lima': 'SPJC', 'jorge chavez': 'SPJC', 'lim': 'SPJC',
+      'cusco': 'SPZO', 'alejandro velasco astete': 'SPZO', 'cuz': 'SPZO',
+      'arequipa': 'SPQU', 'rodriguez ballon': 'SPQU', 'aqp': 'SPQU',
+      'trujillo': 'SPRU', 'carlos martinez de pinillos': 'SPRU', 'tru': 'SPRU',
+      'chiclayo': 'SPHI', 'jose abelardo quinones gonzales': 'SPHI', 'cix': 'SPHI',
+      'iquitos': 'SPQT', 'coronel fap francisco secada vignetta': 'SPQT', 'iqt': 'SPQT',
+      'piura': 'SPUR', 'capitan guillermo concha iberico': 'SPUR', 'piu': 'SPUR',
+      'tacna': 'SPTN', 'coronel fap carlos ciriani santa rosa': 'SPTN', 'tcq': 'SPTN',
+      'pucallpa': 'SPCL', 'capitan david abensur rengifo': 'SPCL', 'pcl': 'SPCL',
+      'tumbes': 'SPME', 'capitan fap pedro canga rodriguez': 'SPME', 'tbu': 'SPME',
+      'huanuco': 'SPNC', 'alferez fap david figueroa fernandini': 'SPNC', 'huc': 'SPNC',
+      'ayacucho': 'SPHO', 'coronel fap alfredo mendivil duarte': 'SPHO', 'ayp': 'SPHO',
+      'cajamarca': 'SPJR', 'mayor general fap armando revoredo iglesias': 'SPJR', 'cjm': 'SPJR',
+      'chachapoyas': 'SPPY', 'chc': 'SPPY',
+      'juliaca': 'SPJL', 'inca manco capac': 'SPJL', 'jul': 'SPJL',
+      'puerto maldonado': 'SPTU', 'padre jose aldamiz': 'SPTU', 'pem': 'SPTU',
+      'rioja': 'SPJA', 'juan simons vela': 'SPJA', 'rij': 'SPJA',
+      'tingo maria': 'SPTM', 'tgm': 'SPTM',
+      'huaraz': 'SPRZ', 'comandante fap german arias graziani': 'SPRZ', 'ata': 'SPRZ',
+      'anta': 'SPAN', 'ant': 'SPAN',
+      'andahuaylas': 'SPHY', 'anh': 'SPHY',
+      'nazca': 'SPZA', 'maria reiche neuman': 'SPZA', 'nzc': 'SPZA',
+      'pisco': 'SPSO', 'capitan fap renán elías olivera': 'SPSO', 'pis': 'SPSO',
+      'ica': 'SPIC', 'ica': 'SPIC',
+      'chincha': 'SPCH', 'chincha': 'SPCH',
+      'santiago': 'SCEL', 'arturo merino benitez': 'SCEL', 'scl': 'SCEL',
+      'valparaiso': 'SCVP', 'vap': 'SCVP',
+      'concepcion': 'SCIE', 'carriel sur': 'SCIE', 'ccp': 'SCIE',
+      'temuco': 'SCTC', 'maquehue': 'SCTC', 'zco': 'SCTC',
+      'puerto montt': 'SCTE', 'el tepual': 'SCTE', 'pmt': 'SCTE',
+      'punta arenas': 'SCCI', 'carlos ibanez del campo': 'SCCI', 'puf': 'SCCI',
+      'iquique': 'SCDA', 'diego aracena': 'SCDA', 'iqq': 'SCDA',
+      'antofagasta': 'SCFA', 'cerro moreno': 'SCFA', 'anf': 'SCFA',
+      'calama': 'SCCF', 'el loa': 'SCCF', 'cjc': 'SCCF',
+      'la serena': 'SCSE', 'la florida': 'SCSE', 'lsc': 'SCSE',
+      'copiapo': 'SCAT', 'desierto de atacama': 'SCAT', 'cpy': 'SCAT',
+      'valdivia': 'SCVD', 'pichoy': 'SCVD', 'zal': 'SCVD',
+      'osorno': 'SCJO', 'canal bajo carlos hott siebert': 'SCJO', 'zos': 'SCJO',
+      'castro': 'SCAS', 'mocopulli': 'SCAS', 'wca': 'SCAS',
+      'puerto natales': 'SCNT', 'pnt': 'SCNT',
+      'coyhaique': 'SCCY', 'teniente vidal': 'SCCY', 'gxq': 'SCCY',
+      'balmaceda': 'SCBA', 'bca': 'SCBA',
+      'chile chico': 'SCCC', 'ccb': 'SCCC',
+      'easter island': 'SCIP', 'mataveri': 'SCIP', 'ipc': 'SCIP',
+      'juan fernandez': 'SCJF', 'robinson crusoe': 'SCJF', 'jfr': 'SCJF',
+      'arica': 'SCAR', 'chacalluta': 'SCAR', 'ari': 'SCAR',
+      'ovalle': 'SCOV', 'ova': 'SCOV',
+      'curico': 'SCIC', 'general freire': 'SCIC', 'cur': 'SCIC',
+      'talca': 'SCTL', 'panguilemo': 'SCTL', 'tal': 'SCTL',
+      'chillan': 'SCCH', 'general bernardo ohiggins': 'SCCH', 'yai': 'SCCH',
+      'los angeles': 'SCGE', 'maria dolores': 'SCGE', 'lsq': 'SCGE',
+      'angol': 'SCAG', 'agl': 'SCAG',
+      'victoria': 'SCVI', 'vic': 'SCVI',
+      'curacautin': 'SCCR', 'crt': 'SCCR',
+      'piucurcu': 'SCPU', 'puc': 'SCPU',
+      'nueva imperial': 'SCNP', 'nmp': 'SCNP',
+      'buenos aires': 'SAEZ', 'ezeiza': 'SAEZ', 'eze': 'SAEZ',
+      'jorge newbery': 'SABE', 'abe': 'SABE',
+      'cordoba': 'SACO', 'pajas blancas': 'SACO', 'cor': 'SACO',
+      'mendoza': 'SAME', 'governor francisco gabrielli': 'SAME', 'mdz': 'SAME',
+      'rosario': 'SAAR', 'islas malvinas': 'SAAR', 'ros': 'SAAR',
+      'tucuman': 'SANT', 'benjamin matienzo': 'SANT', 'tuc': 'SANT',
+      'salta': 'SASA', 'martin miguel de guemes': 'SASA', 'sla': 'SASA',
+      'bariloche': 'SAZS', 'teniente luis candelaria': 'SAZS', 'brc': 'SAZS',
+      'neuquen': 'SAZN', 'presidente peron': 'SAZN', 'nqn': 'SAZN',
+      'comodoro rivadavia': 'SAVC', 'general enrique mosconi': 'SAVC', 'crv': 'SAVC',
+      'rio gallegos': 'SAWG', 'piloto civil norberto fernandez': 'SAWG', 'rgn': 'SAWG',
+      'ushuaia': 'SAWH', 'malvinas argentinas': 'SAWH', 'ush': 'SAWH',
+      'iguazu': 'SARI', 'cataratas del iguazu': 'SARI', 'ign': 'SARI',
+      'formosa': 'SARF', 'fma': 'SARF',
+      'resistencia': 'SARE', 'res': 'SARE',
+      'corrientes': 'SARC', 'cne': 'SARC',
+      'posadas': 'SARP', 'libertador general san martin': 'SARP', 'pss': 'SARP',
+      'santa fe': 'SAAV', 'sauce viejo': 'SAAV', 'sfn': 'SAAV',
+      'parana': 'SAAP', 'general urquiza': 'SAAP', 'pra': 'SAAP',
+      'mar del plata': 'SAZM', 'astor piazzolla': 'SAZM', 'mdp': 'SAZM',
+      'bahia blanca': 'SAZB', 'comandante espora': 'SAZB', 'bhb': 'SAZB',
+      'santa rosa': 'SAZR', 'rsa': 'SAZR',
+      'san luis': 'SAOU', 'brigadier mayor d cesar raul ojeda': 'SAOU', 'luj': 'SAOU',
+      'villa reynolds': 'SAOR', 'vrn': 'SAOR',
+      'san juan': 'SANU', 'domingo faustino sarmiento': 'SANU', 'uaq': 'SANU',
+      'la rioja': 'SANL', 'capitan fuentes martinez': 'SANL', 'irj': 'SANL',
+      'catamarca': 'SANC', 'coronel felipe varela': 'SANC', 'cta': 'SANC',
+      'santiago del estero': 'SANE', 'sde': 'SANE',
+      'jujuy': 'SASJ', 'gobernador horacio guzman': 'SASJ', 'juy': 'SASJ',
+      'tarija': 'SLTJ', 'capitan oriel lea plaza': 'SLTJ', 'taj': 'SLTJ',
+      'la paz': 'SLLP', 'el alto': 'SLLP', 'lpb': 'SLLP',
+      'santa cruz': 'SLVR', 'viru viru': 'SLVR', 'vrv': 'SLVR',
+      'cochabamba': 'SLCB', 'jorge wilstermann': 'SLCB', 'cbba': 'SLCB',
+      'sucre': 'SLSU', 'juana azurduy de padilla': 'SLSU', 'sre': 'SLSU',
+      'potosi': 'SLPO', 'capitan nicolas rojas': 'SLPO', 'pot': 'SLPO',
+      'oruro': 'SLOR', 'juan mendoza': 'SLOR', 'oru': 'SLOR',
+      'trinidad': 'SLTR', 'capitan anibal arab fadul': 'SLTR', 'tid': 'SLTR',
+      'riberalta': 'SLRI', 'capitan av salvador ogaya': 'SLRI', 'rib': 'SLRI',
+      'guayaramerin': 'SLGY', 'guayaramerin': 'SLGY', 'gyr': 'SLGY',
+      'cobija': 'SLCO', 'capitan anibal arab': 'SLCO', 'cij': 'SLCO',
+      'uyuni': 'SLUY', 'joya andina': 'SLUY', 'uyu': 'SLUY',
+      'villamontes': 'SLVM', 'teniente coronel rafael pabón': 'SLVM', 'vln': 'SLVM',
+      'yacuiba': 'SLYA', 'yac': 'SLYA',
+      'camiri': 'SLCA', 'cam': 'SLCA',
+      'vallegrande': 'SLVG', 'valle grande': 'SLVG', 'vlg': 'SLVG',
+      'samaipata': 'SLSA', 'sam': 'SLSA',
+      'robore': 'SLRB', 'rob': 'SLRB',
+      'puerto suarez': 'SLPS', 'psu': 'SLPS',
+      'san ignacio de velasco': 'SLSI', 'siv': 'SLSI',
+      'concepcion': 'SLCO', 'con': 'SLCO',
+      'san ramon': 'SLSR', 'srm': 'SLSR',
+      'reyes': 'SLRY', 'rey': 'SLRY',
+      'rurrenabaque': 'SLRQ', 'rnq': 'SLRQ',
+      'asuncion': 'SGAS', 'silvio pettirossi': 'SGAS', 'asu': 'SGAS',
+      'ciudad del este': 'SGES', 'guarani': 'SGES', 'age': 'SGES',
+      'pedro juan caballero': 'SGPJ', 'dr luis maria argana': 'SGPJ', 'pjc': 'SGPJ',
+      'concepcion': 'SGCO', 'con': 'SGCO',
+      'filadelfia': 'SGFI', 'capitan fuentes martinez': 'SGFI', 'phi': 'SGFI',
+      'mariscal estigarribia': 'SGME', 'estigarribia': 'SGME', 'esq': 'SGME',
+      'pilar': 'SGPI', 'ñacunday': 'SGPI', 'pil': 'SGPI',
+      'ayolas': 'SGAY', 'villa hayes': 'SGAY', 'ayl': 'SGAY',
+      'general artigas': 'SGAR', 'art': 'SGAR',
+      'caazapa': 'SGCA', 'caazapa': 'SGCA', 'czp': 'SGCA',
+      'coronel oviedo': 'SGCO', 'coronel oviedo': 'SGCO', 'cov': 'SGCO',
+      'encarnacion': 'SGEN', 'teniente amin ayub gonzalez': 'SGEN', 'enc': 'SGEN',
+      'san pedro': 'SGSP', 'san pedro': 'SGSP', 'spd': 'SGSP',
+      'uruguayana': 'SBUG', 'ruben berta': 'SBUG', 'urg': 'SBUG',
+      'montevideo': 'SUMU', 'carrasco': 'SUMU', 'mvd': 'SUMU',
+      'punta del este': 'SULS', 'capitán de corbeta carlos a curbelo': 'SULS', 'pde': 'SULS',
+      'rivera': 'SURV', 'internacional': 'SURV', 'rvr': 'SURV',
+      'salto': 'SUSO', 'nueva clase': 'SUSO', 'slt': 'SUSO',
+      'artigas': 'SUAG', 'artigas': 'SUAG', 'ati': 'SUAG',
+      'tacuarembo': 'SUTB', 'tacuarembo': 'SUTB', 'tbo': 'SUTB',
+      'melo': 'SUMO', 'melo': 'SUMO', 'mlo': 'SUMO',
+      'treinta y tres': 'SUTT', 'treinta y tres': 'SUTT', 'tyt': 'SUTT',
+      'rocha': 'SURO', 'rocha': 'SURO', 'rha': 'SURO',
+      'maldonado': 'SUMD', 'maldonado': 'SUMD', 'mdo': 'SUMD',
+      'colonia': 'SUCA', 'colonia': 'SUCA', 'col': 'SUCA',
+      'paysandu': 'SUPS', 'tydeo larre borges': 'SUPS', 'psc': 'SUPS',
+      'fray bentos': 'SUFB', 'fray bentos': 'SUFB', 'fbt': 'SUFB',
+      'mercedes': 'SUME', 'mercedes': 'SUME', 'mer': 'SUME',
+      'young': 'SUYG', 'young': 'SUYG', 'you': 'SUYG',
+      'flores': 'SUFL', 'flores': 'SUFL', 'flo': 'SUFL',
+      'durazno': 'SUDU', 'santa bernardina': 'SUDU', 'dur': 'SUDU',
+      'florida': 'SUFD', 'florida': 'SUFD', 'fla': 'SUFD',
+      'canelones': 'SUCN', 'canelones': 'SUCN', 'cne': 'SUCN',
+      'san jose': 'SUSJ', 'san jose': 'SUSJ', 'sjs': 'SUSJ',
+      'rio negro': 'SURN', 'rio negro': 'SURN', 'rng': 'SURN',
+      'soriano': 'SUSO', 'soriano': 'SUSO', 'sor': 'SUSO',
+      'lavalleja': 'SULA', 'lavalleja': 'SULA', 'lav': 'SULA',
+      'cerro largo': 'SUCL', 'cerro largo': 'SUCL', 'crl': 'SUCL'
+    };
+    
+    // Function to initialize speech recognition
+    function initSpeechRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        console.warn('Speech recognition not supported');
+        document.getElementById('micButton').style.display = 'none';
+        return false;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 3;
+      
+      recognition.onstart = function() {
+        isRecording = true;
+        const micBtn = document.getElementById('micButton');
+        const micIcon = document.getElementById('micIcon');
+        const voiceStatus = document.getElementById('voiceStatus');
+        
+        micBtn.classList.add('recording');
+        micBtn.style.background = '#ef4444 !important';
+        micBtn.style.color = 'white !important';
+        micIcon.textContent = '🔴';
+        micBtn.title = 'Listening... Say two airport names';
+        
+        if (voiceStatus) {
+          voiceStatus.textContent = 'Listening...';
+          voiceStatus.style.display = 'block';
+        }
+        
+        console.log('Voice recording started');
+      };
+      
+      recognition.onend = function() {
+        isRecording = false;
+        const micBtn = document.getElementById('micButton');
+        const micIcon = document.getElementById('micIcon');
+        const voiceStatus = document.getElementById('voiceStatus');
+        
+        micBtn.classList.remove('recording');
+        micBtn.style.background = 'var(--bg-tertiary) !important';
+        micBtn.style.color = 'var(--text-primary) !important';
+        micIcon.textContent = '🎤';
+        micBtn.title = 'Voice input - Say two airport names';
+        
+        if (voiceStatus) {
+          setTimeout(() => {
+            voiceStatus.style.display = 'none';
+          }, 3000);
+        }
+        
+        console.log('Voice recording ended');
+      };
+      
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        const voiceStatus = document.getElementById('voiceStatus');
+        
+        console.log('Speech recognition result:', transcript);
+        
+        if (voiceStatus) {
+          voiceStatus.textContent = `Heard: "${transcript}"`;
+        }
+        
+        const icaoCodes = convertSpeechToICAO(transcript);
+        if (icaoCodes) {
+          document.getElementById('icaoInput').value = icaoCodes;
+          
+          if (voiceStatus) {
+            voiceStatus.textContent = `Converted to: ${icaoCodes}. Searching...`;
+            voiceStatus.style.color = '#22c55e';
+          }
+          
+          // Automatically trigger the search
+          setTimeout(() => {
+            document.getElementById('analyzeBtn').click();
+          }, 1000);
+        } else {
+          if (voiceStatus) {
+            voiceStatus.textContent = `Could not identify airports from: "${transcript}"`;
+            voiceStatus.style.color = '#ef4444';
+          }
+          showError('Could not identify two airports from: "' + transcript + '". Please try again.');
+        }
+      };
+      
+      recognition.onerror = function(event) {
+        console.error('Speech recognition error:', event.error);
+        let errorMsg = 'Speech recognition failed. ';
+        switch(event.error) {
+          case 'no-speech':
+            errorMsg += 'No speech detected. Please try again.';
+            break;
+          case 'audio-capture':
+            errorMsg += 'Microphone not available.';
+            break;
+          case 'not-allowed':
+            errorMsg += 'Microphone permission denied.';
+            break;
+          case 'network':
+            errorMsg += 'Network error occurred.';
+            break;
+          default:
+            errorMsg += 'Please try again.';
+        }
+        showError(errorMsg);
+      };
+      
+      return true;
+    }
+    
+    // Function to convert speech to ICAO codes
+    function convertSpeechToICAO(transcript) {
+      const text = transcript.toLowerCase();
+      console.log('Processing transcript:', text);
+      
+      // Common words to ignore
+      const ignoreWords = ['to', 'from', 'and', 'airport', 'international', 'city'];
+      
+      // Split text and clean it
+      let words = text.split(/\s+/);
+      
+      // Handle common patterns like "Delhi to Dubai", "from London to New York"
+      const patterns = [
+        /from\s+(.+?)\s+to\s+(.+)/,
+        /(.+?)\s+to\s+(.+)/,
+        /(.+?)\s+and\s+(.+)/,
+        /(.+?)\s+(.+?)$/
+      ];
+      
+      let airport1 = null, airport2 = null;
+      
+      // Try pattern matching first
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match && match.length >= 3) {
+          airport1 = match[1].trim();
+          airport2 = match[2].trim();
+          break;
+        }
+      }
+      
+      // If pattern matching failed, try to find two airports in the text
+      if (!airport1 || !airport2) {
+        const foundAirports = [];
+        
+        // Check for exact matches in airport mapping
+        const sortedKeys = Object.keys(airportMapping).sort((a, b) => b.length - a.length);
+        
+        for (const airportName of sortedKeys) {
+          if (text.includes(airportName) && !foundAirports.some(found => found.name === airportName)) {
+            foundAirports.push({ name: airportName, icao: airportMapping[airportName] });
+            if (foundAirports.length >= 2) break;
+          }
+        }
+        
+        if (foundAirports.length >= 2) {
+          return foundAirports[0].icao + ',' + foundAirports[1].icao;
+        }
+      }
+      
+      // Convert found airport names to ICAO codes
+      if (airport1 && airport2) {
+        const icao1 = findAirportCode(airport1);
+        const icao2 = findAirportCode(airport2);
+        
+        if (icao1 && icao2) {
+          return icao1 + ',' + icao2;
+        }
+      }
+      
+      return null;
+    }
+    
+    // Function to find airport code with fuzzy matching
+    function findAirportCode(airportName) {
+      const name = airportName.toLowerCase().trim();
+      
+      // Direct match
+      if (airportMapping[name]) {
+        return airportMapping[name];
+      }
+      
+      // Try partial matches
+      const keys = Object.keys(airportMapping);
+      
+      // Look for keys that start with the given name
+      for (const key of keys) {
+        if (key.startsWith(name) || name.startsWith(key)) {
+          return airportMapping[key];
+        }
+      }
+      
+      // Look for keys that contain the given name (for multi-word airports)
+      for (const key of keys) {
+        if (key.includes(name) || name.includes(key)) {
+          // Prefer longer matches
+          return airportMapping[key];
+        }
+      }
+      
+      return null;
+    }
+    
+    // Function to show error messages
+    function showError(message) {
+      // Create or update error message element
+      let errorEl = document.getElementById('voiceError');
+      if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.id = 'voiceError';
+        errorEl.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #ef4444;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-size: 14px;
+          max-width: 300px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 1000;
+          animation: slideIn 0.3s ease;
+        `;
+        document.body.appendChild(errorEl);
+      }
+      
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        if (errorEl) {
+          errorEl.style.display = 'none';
+        }
+      }, 5000);
+    }
+    
+    // Add animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Theme toggle functionality
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      updateThemeIcon(theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    }
+    
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        icon.textContent = theme === 'dark' ? '🌞' : '🌙';
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      
+      // Theme toggle
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+      
+      // Initialize speech recognition
+      initSpeechRecognition();
+      
+      // Microphone button event listener
+      const micButton = document.getElementById('micButton');
+      const voiceStatus = document.getElementById('voiceStatus');
+      
+      if (micButton) {
+        // Show that button is ready
+        if (voiceStatus) {
+          voiceStatus.textContent = 'Voice input ready. Click microphone to start.';
+          voiceStatus.style.display = 'block';
+          voiceStatus.style.color = 'var(--text-secondary)';
+          setTimeout(() => {
+            voiceStatus.style.display = 'none';
+          }, 3000);
+        }
+        
+        micButton.addEventListener('click', () => {
+          console.log('Microphone button clicked');
+          
+          if (!recognition) {
+            showError('Speech recognition not supported in this browser.');
+            if (voiceStatus) {
+              voiceStatus.textContent = 'Speech recognition not supported';
+              voiceStatus.style.color = '#ef4444';
+              voiceStatus.style.display = 'block';
+            }
+            return;
+          }
+          
+          if (isRecording) {
+            recognition.stop();
+            if (voiceStatus) {
+              voiceStatus.textContent = 'Stopping...';
+              voiceStatus.style.color = 'var(--text-secondary)';
+            }
+          } else {
+            try {
+              if (voiceStatus) {
+                voiceStatus.textContent = 'Starting microphone...';
+                voiceStatus.style.color = 'var(--text-secondary)';
+                voiceStatus.style.display = 'block';
+              }
+              recognition.start();
+            } catch (error) {
+              console.error('Error starting speech recognition:', error);
+              showError('Could not start speech recognition. Please check microphone permissions.');
+              if (voiceStatus) {
+                voiceStatus.textContent = 'Microphone error - check permissions';
+                voiceStatus.style.color = '#ef4444';
+              }
+            }
+          }
+        });
+      } else {
+        console.error('Microphone button not found!');
+        showError('Microphone button not found. Please refresh the page.');
+      }
+      
+      // Initialize weather map
+      map = L.map('map').setView([39.8, -98.5], 4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+      
+      // Add weather controls
+      document.getElementById('showClouds').addEventListener('click', () => showWeatherLayer('clouds_new'));
+      document.getElementById('showPrecip').addEventListener('click', () => showWeatherLayer('precipitation_new'));
+      document.getElementById('showWind').addEventListener('click', () => showWeatherLayer('wind_new'));
+      
+      // Default to showing clouds
+      showWeatherLayer('clouds_new');
+
+      document.getElementById('analyzeBtn').addEventListener('click', async () => {
+        try {
+          const codes = parseCodes(document.getElementById('icaoInput').value);
+          if (!codes.length) return;
+
+          const wantMetar = document.getElementById('wantMetar').checked;
+          const wantTaf = document.getElementById('wantTaf').checked;
+          const wantPirep = document.getElementById('wantPirep').checked;
+          const wantNotam = document.getElementById('wantNotam').checked;
+          const wantSig = document.getElementById('wantSigmet').checked;
+          const wantAir = document.getElementById('wantAirmet').checked;
+          
+          const params = [];
+          if (wantMetar) params.push('metar=true');
+          if (wantTaf) params.push('taf=true');
+          if (wantPirep) params.push('pirep=true');
+          if (wantNotam) params.push('notam=true');
+          if (wantSig) params.push('sigmet=true');
+          if (wantAir) params.push('airmet=true');
+          const q = params.length ? '?' + params.join('&') : '';
+
+          if (codes.length === 1) {
+            hide('routeBanner');
+            const data = await fetchJSON(`${APIBASEURL}/weather/${codes[0]}${q}`);
+            renderSingle(data, { metar: wantMetar, taf: wantTaf, pirep: wantPirep, notam: wantNotam, sigmet: wantSig, airmet: wantAir });
+            
+            // Focus map on single airport if coordinates available
+            if (data.weather?.station?.latitude && data.weather?.station?.longitude) {
+              const lat = data.weather.station.latitude;
+              const lng = data.weather.station.longitude;
+              map.setView([lat, lng], 8);
+              L.marker([lat, lng]).addTo(map).bindPopup(data.weather.station.site || 'Airport');
+            } else {
+              clearRouteMap();
+            }
+          } else {
+            show('routeBanner');
+            const data = await fetchJSON(`${APIBASEURL}/route?airports=${encodeURIComponent(codes.join(','))}${q.replace('?', '&')}`);
+            renderRoute(data, { metar: wantMetar, taf: wantTaf, pirep: wantPirep, notam: wantNotam, sigmet: wantSig, airmet: wantAir });
+            drawRouteMap(data.nodes);
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Fetch failed. See console.");
+        }
+      });
+    });
+
+    function parseCodes(s) { return s.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean); }
+    async function fetchJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json(); }
+    function setText(id, text){ const el=document.getElementById(id); if(el) el.textContent=text; }
+    function show(id){ const el=document.getElementById(id); if(el) el.classList.remove('hidden'); }
+    function hide(id){ const el=document.getElementById(id); if(el) el.classList.add('hidden'); }
+
+    // METAR parsing and analysis functions
+    function parseMetar(metarText) {
+      if (!metarText) return {};
+      
+      const parts = metarText.trim().split(/\s+/);
+      const result = { raw: metarText };
+      
+      // Extract basic components
+      result.station = parts[0] || '';
+      result.time = parts[1] || '';
+      
+      // Find wind, visibility, weather, clouds, temp, pressure
+      for (let i = 2; i < parts.length; i++) {
+        const part = parts[i];
+        
+        if (/^\d{5}KT$|^\d{3}\d{2}KT$/.test(part)) {
+          result.wind = part;
+        } else if (/^\d{4}$/.test(part) && !result.visibility) {
+          result.visibility = part;
+        } else if (/^(SCT|BKN|OVC|FEW)\d{3}$/.test(part)) {
+          result.clouds = result.clouds || [];
+          result.clouds.push(part);
+        } else if (/^M?\d{2}\/M?\d{2}$/.test(part)) {
+          result.temperature = part;
+        } else if (/^Q\d{4}$|^A\d{4}$/.test(part)) {
+          result.pressure = part;
+        } else if (/^(HZ|FG|BR|RA|SN|TS)$/.test(part)) {
+          result.weather = result.weather || [];
+          result.weather.push(part);
+        }
+      }
+      
+      return result;
+    }
+
+    function generateStationSummary(parsed, data) {
+      // Try to get data from multiple possible sources
+      const metar = data.weather?.metar || data.metar || {};
+      const station = metar.station_id || parsed.station || data.weather?.station?.icao || 'Unknown';
+      const stationName = data.weather?.station?.site || data.weather?.station?.name || metar.station?.name || '';
+      
+      // Use backend data first, then parsed data as fallback
+      const time = metar.observation_time || parseTime(parsed.time) || parseTime(metar.raw_text?.split(' ')[1]);
+      const wind = metar.wind_string || parseWind(parsed.wind) || parseWind(metar.raw_text?.match(/\d{5}KT|\d{6}KT/)?.[0]);
+      const vis = metar.visibility_statute_mi ? `${metar.visibility_statute_mi} SM` : parseVisibility(parsed.visibility, parsed.weather);
+      const clouds = metar.sky_condition ? formatBackendClouds(metar.sky_condition) : parseClouds(parsed.clouds);
+      const temp = metar.temp_c && metar.dewpoint_c ? `${metar.temp_c}°C / ${metar.dewpoint_c}°C` : parseTemperature(parsed.temperature);
+      const pressure = metar.altim_in_hg ? `${Math.round(metar.altim_in_hg * 33.86)} hPa (${metar.altim_in_hg} inHg)` : parsePressure(parsed.pressure);
+      const trend = 'NOSIG'; // Default
+      
+      return {
+        station: `${station}${stationName ? ' (' + stationName + ')' : ''}`,
+        time: time || 'Unknown',
+        wind: wind || 'Calm',
+        visibility: vis || 'Unknown',
+        clouds: clouds || 'Clear',
+        temperature: temp || 'Unknown',
+        pressure: pressure || 'Unknown',
+        trend
+      };
+    }
+    
+    function formatBackendClouds(skyCondition) {
+      if (!skyCondition || !Array.isArray(skyCondition)) return 'Clear';
+      return skyCondition.map(layer => {
+        const coverage = layer.sky_cover || 'Unknown';
+        const altitude = layer.cloud_base_ft_agl || 'Unknown';
+        return `${coverage} at ${altitude} ft`;
+      }).join(', ') || 'Clear';
+    }
+
+    function parseTime(timeStr) {
+      if (!timeStr) return 'Unknown';
+      const match = timeStr.match(/(\d{2})(\d{2})(\d{2})Z/);
+      if (!match) return timeStr;
+      const [, day, hour, min] = match;
+      return `${day}th, ${hour}${min} UTC`;
+    }
+
+    function parseWind(windStr) {
+      if (!windStr) return 'Calm';
+      const match = windStr.match(/(\d{3})(\d{2,3})KT/);
+      if (!match) return windStr;
+      const [, dir, speed] = match;
+      return `${dir}° at ${speed} kt`;
+    }
+
+    function parseVisibility(visStr, weather) {
+      if (!visStr) return 'Unknown';
+      const vis = parseInt(visStr);
+      const visKm = vis / 1000;
+      const visSM = (vis * 0.000621371).toFixed(2);
+      const weatherDesc = weather ? ` in ${weather.join(', ').replace('HZ', 'haze').replace('FG', 'fog').replace('BR', 'mist')}` : '';
+      return `${visKm} km (${visSM} SM)${weatherDesc}`;
+    }
+
+    function parseClouds(cloudsArray) {
+      if (!cloudsArray || !cloudsArray.length) return 'Clear';
+      return cloudsArray.map(cloud => {
+        const match = cloud.match(/(SCT|BKN|OVC|FEW)(\d{3})/);
+        if (!match) return cloud;
+        const [, type, alt] = match;
+        const altitude = parseInt(alt) * 100;
+        const typeMap = { SCT: 'Scattered', BKN: 'Broken', OVC: 'Overcast', FEW: 'Few' };
+        return `${typeMap[type]} at ${altitude.toLocaleString()} ft`;
+      }).join(', ');
+    }
+
+    function parseTemperature(tempStr) {
+      if (!tempStr) return 'Unknown';
+      const match = tempStr.match(/(M?\d{2})\/(M?\d{2})/);
+      if (!match) return tempStr;
+      let [, temp, dew] = match;
+      temp = temp.replace('M', '-');
+      dew = dew.replace('M', '-');
+      return `${temp}°C / ${dew}°C`;
+    }
+
+    function parsePressure(pressStr) {
+      if (!pressStr) return 'Unknown';
+      if (pressStr.startsWith('Q')) {
+        const hPa = parseInt(pressStr.substring(1));
+        const inHg = (hPa * 0.02953).toFixed(2);
+        return `${hPa} hPa (${inHg} inHg)`;
+      }
+      return pressStr;
+    }
+
+    function calculateDensityAltitude(tempC, pressureHPa, fieldElevation = 0) {
+      // Standard atmosphere calculations
+      const pressureAlt = (1013.25 - pressureHPa) * 27 + fieldElevation;
+      const standardTempC = 15 - (pressureAlt * 0.00198);
+      const densityAlt = pressureAlt + (120 * (tempC - standardTempC));
+      return Math.round(densityAlt);
+    }
+
+    function generateOperationalTakeaway(parsed, summary, data) {
+      const vis = parseInt(parsed.visibility) || 9999;
+      const visKm = vis / 1000;
+      const visSM = vis * 0.000621371;
+      
+      let takeaway = '';
+      
+      // Flight category assessment
+      const cloudBase = getLowestCloudBase(parsed.clouds);
+      if (visSM >= 5 && cloudBase >= 3000) {
+        takeaway += 'VFR conditions. ';
+      } else if (visSM >= 3 && cloudBase >= 1000) {
+        takeaway += 'MVFR (Marginal VFR) conditions. ';
+      } else if (visSM >= 1 && cloudBase >= 500) {
+        takeaway += 'IFR conditions. ';
+      } else {
+        takeaway += 'LIFR (Low IFR) conditions. ';
+      }
+      
+      // Weather impacts
+      if (parsed.weather && parsed.weather.includes('HZ')) {
+        takeaway += `Haze reduces visual contrast - expect degraded visual cues. `;
+      }
+      if (parsed.weather && parsed.weather.includes('TS')) {
+        takeaway += 'Thunderstorms present - avoid or use radar guidance. ';
+      }
+      
+      // Performance implications
+      const tempMatch = parsed.temperature?.match(/(\d{2})/);
+      const pressMatch = parsed.pressure?.match(/Q(\d{4})/);
+      if (tempMatch && pressMatch) {
+        const tempC = parseInt(tempMatch[1]);
+        const pressHPa = parseInt(pressMatch[1]);
+        const densityAlt = calculateDensityAltitude(tempC, pressHPa);
+        if (densityAlt > 1000) {
+          takeaway += `Density altitude ~${densityAlt.toLocaleString()} ft - expect reduced performance. `;
+        }
+      }
+      
+      return takeaway.trim();
+    }
+
+    function generateRecommendations(parsed, summary) {
+      const vis = parseInt(parsed.visibility) || 9999;
+      const visSM = vis * 0.000621371;
+      let recommendations = [];
+      
+      // Visibility recommendations
+      if (visSM < 5) {
+        recommendations.push(`Marginal VFR: ${(visSM).toFixed(1)} SM visibility - plan IFR approach and brief go-around procedures.`);
+      }
+      
+      // Performance recommendations
+      const tempMatch = parsed.temperature?.match(/(\d{2})/);
+      const pressMatch = parsed.pressure?.match(/Q(\d{4})/);
+      if (tempMatch && pressMatch) {
+        const tempC = parseInt(tempMatch[1]);
+        const pressHPa = parseInt(pressMatch[1]);
+        const densityAlt = calculateDensityAltitude(tempC, pressHPa);
+        if (densityAlt > 1000) {
+          recommendations.push(`Performance: Density altitude ~${densityAlt.toLocaleString()} ft - run full performance calculations, expect longer takeoff roll and reduced climb rate.`);
+        }
+      }
+      
+      // Weather-specific recommendations
+      if (parsed.weather && parsed.weather.includes('HZ')) {
+        recommendations.push('Haze conditions: Rely on instruments for precision approaches, brief go-around early.');
+      }
+      
+      return recommendations.join('\n');
+    }
+
+    function getLowestCloudBase(clouds) {
+      if (!clouds || !clouds.length) return 10000;
+      let lowest = 10000;
+      clouds.forEach(cloud => {
+        const match = cloud.match(/(\d{3})/);
+        if (match) {
+          const alt = parseInt(match[1]) * 100;
+          if (alt < lowest) lowest = alt;
+        }
+      });
+      return lowest;
+    }
+
+    function generateAltitudeDistanceBrief(parsed, data) {
+      // Describe what's happening near the airport at different altitudes and distances.
+      // METAR is representative of conditions at the aerodrome — assume within ~5 NM unless SIGMET/AIRMET specify broader phenomena.
+      const lines = [];
+      const station = parsed.station || data?.weather?.metar?.station_id || 'the field';
+      const visM = parseInt(parsed.visibility) || null;
+      const visSM = visM ? (visM * 0.000621371) : null;
+      const clouds = parsed.clouds || [];
+
+      // Ground / pattern altitudes
+      const lowestBase = getLowestCloudBase(clouds);
+      const groundVis = visSM ? `${visSM.toFixed(1)} SM` : 'good';
+      lines.push(`Surface to 1,000 ft AGL (airport vicinity ~5 NM): Ground visibility ${groundVis}${parsed.weather?.includes('HZ') ? ' in haze' : ''}. ${lowestBase < 1500 ? `Ceiling influences pattern at ~${lowestBase.toLocaleString()} ft.` : 'No immediate ceiling constraints for pattern work.'}`);
+
+      // 3,000–8,000 ft (typical low-altitude airwork)
+      const layerDescriptions = (clouds || []).map(c => {
+        const m = c.match(/(FEW|SCT|BKN|OVC)(\d{3})/);
+        if (!m) return null;
+        const [, cov, h] = m;
+        const covDesc = { FEW: 'few', SCT: 'scattered', BKN: 'broken', OVC: 'overcast' }[cov] || cov;
+        const alt = parseInt(h) * 100;
+        return `${covDesc} clouds near ${alt.toLocaleString()} ft`;
+      }).filter(Boolean);
+      if (layerDescriptions.length) {
+        lines.push(`3,000–8,000 ft AGL: ${layerDescriptions.join(', ')}. Expect intermittent IMC if layers are broken/overcast.`);
+      } else {
+        lines.push(`3,000–8,000 ft AGL: No reported cloud layers — likely VMC above the field, subject to haze.`);
+      }
+
+      // Typical cruise bands and "dense clouds aloft but clear ground" note
+      const hasHighClouds = (clouds || []).some(c => {
+        const m = c.match(/(\d{3})$/); if (!m) return false; const alt = parseInt(m[1])*100; return alt >= 10000; // >= FL100-ish AGL proxy
+      });
+      if (hasHighClouds && visSM && visSM >= 3) {
+        lines.push(`10,000–FL200: Cloud layers reported aloft with clear ground visibility — anticipate cruising above or within layers depending on tops. Plan IFR if ceilings become BKN/OVC below cruise.`);
+      } else {
+        lines.push(`10,000–FL200: No specific high layers reported in METAR; check TAF/SIGMET/AIRMET for enroute and tops info.`);
+      }
+
+      // Product focus integration
+      const wantSig = document.getElementById('wantSigmet')?.checked;
+      const wantAir = document.getElementById('wantAirmet')?.checked;
+      if (wantSig || wantAir) {
+        const sigLines = [];
+        if (wantSig) {
+          const sigs = data?.sigmets || [];
+          sigLines.push(`SIGMETs: ${sigs.length ? `${sigs.length} active near route/area` : 'none nearby'}`);
+        }
+        if (wantAir) {
+          const airs = data?.airmets || [];
+          sigLines.push(`AIRMETs: ${airs.length ? `${airs.length} active near route/area` : 'none nearby'}`);
+        }
+        if (sigLines.length) lines.push(sigLines.join(' | '));
+      }
+
+      // Distance note (fallback)
+      lines.push('Distance note: METAR reflects conditions on the field; use TAF/SIGMET/AIRMET and radar/satellite for conditions beyond ~5–10 NM.');
+
+      return lines.join('\n');
+    }
+
+    function generateOverallWeatherSummary(data, parsed, dataTypes) {
+      let severity = 'go';
+      let summary = '';
+      
+      // Check various conditions for severity assessment
+      const vis = parseInt(parsed.visibility) || 9999;
+      const visSM = vis * 0.000621371;
+      const cloudBase = getLowestCloudBase(parsed.clouds || []);
+      const hasThunderstorms = parsed.weather?.includes('TS') || (data.analysis?.thunderstorms && data.analysis.thunderstorms.toLowerCase().includes('thunderstorm'));
+      const hasLowVis = visSM < 3;
+      const hasLowCeiling = cloudBase < 1000;
+      
+      // Check SIGMETs/PIREPs for additional hazards
+      const hasSevereWeather = (data.sigmets || []).some(s => s.raw_text && (s.raw_text.includes('SVR') || s.raw_text.includes('TURB')));
+      const hasTurbulenceReports = (data.pireps || []).some(p => (p.raw_text || p.report || '').toLowerCase().includes('turb'));
+      
+      // Determine severity with more nuanced thunderstorm assessment
+      if (hasSevereWeather) {
+        severity = 'no-go';
+        summary = '🌩️ Severe weather with high winds/hail - AVOID AREA';
+      } else if (hasThunderstorms && (hasLowVis || hasLowCeiling)) {
+        severity = 'no-go';
+        summary = '⚡ Thunderstorms with low visibility/ceiling - HIGH RISK';
+      } else if (hasThunderstorms) {
+        severity = 'caution';
+        summary = '⚡ Thunderstorms present - ASSESS AIRCRAFT CAPABILITY';
+      } else if (hasLowVis && hasLowCeiling) {
+        severity = 'no-go';
+        summary = '🌫️ Low visibility and ceiling - ABORT MISSION';
+      } else if (hasLowVis || hasLowCeiling || hasTurbulenceReports) {
+        severity = 'caution';
+        if (hasLowVis) summary = '⚠️ Low visibility conditions - EXERCISE CAUTION';
+        else if (hasLowCeiling) summary = '☁️ Low ceiling conditions - EXERCISE CAUTION';
+        else summary = '💨 Turbulence reported - EXERCISE CAUTION';
+      } else if (visSM >= 5 && cloudBase >= 3000) {
+        severity = 'go';
+        summary = '☀️ Clear skies and good visibility - CONDITIONS FAVORABLE';
+      } else {
+        severity = 'caution';
+        summary = '⛅ Marginal conditions - PROCEED WITH CAUTION';
+      }
+      
+      // Add brief condition details
+      const details = [];
+      if (visSM < 10) details.push(`Vis: ${visSM.toFixed(1)} SM`);
+      if (cloudBase < 10000) details.push(`Ceiling: ${cloudBase.toLocaleString()} ft`);
+      if (parsed.weather?.length) details.push(`Wx: ${parsed.weather.join(', ')}`);
+      
+      if (details.length) {
+        summary += ` (${details.join(', ')})`;
+      }
+      
+      return { severity, summary };
+    }
+
+    function generateDataTypeSummary(dataType, data, parsed) {
+      switch (dataType) {
+        case 'metar':
+          if (!data.weather?.metar?.raw_text) return 'No current weather data available.';
+          const vis = parseInt(parsed.visibility) || 9999;
+          const visSM = (vis * 0.000621371).toFixed(1);
+          const wx = parsed.weather?.join(', ') || 'clear';
+          return `Current conditions: ${visSM} SM visibility, ${wx}. ${vis < 5000 ? 'Below VFR minimums - IFR required.' : 'Good for VFR flight.'}`;
+          
+        case 'taf':
+          if (!data.weather?.taf?.raw_text) return 'No forecast data available.';
+          return 'Weather forecast available with expected changes over next 24-30 hours.';
+          
+        case 'pirep':
+          const pireps = data.pireps || [];
+          if (!pireps.length) return 'No pilot reports from other aircraft.';
+          const issues = [];
+          if (pireps.some(p => (p.raw_text || p.report || '').toLowerCase().includes('turb'))) issues.push('turbulence');
+          if (pireps.some(p => (p.raw_text || p.report || '').toLowerCase().includes('ice'))) issues.push('icing');
+          return `${pireps.length} pilot reports available${issues.length ? ` mentioning ${issues.join(' and ')}` : ''}. Check details for altitudes.`;
+          
+        case 'notam':
+          const notams = data.notams || [];
+          if (!notams.length) return 'No airport or airspace restrictions.';
+          return `${notams.length} NOTAMs active - may affect runways, navigation aids, or airspace. Review before flight.`;
+          
+        case 'sigmet':
+          const sigmets = data.sigmets || [];
+          if (!sigmets.length) return 'No severe weather warnings active.';
+          return `${sigmets.length} SIGMETs active for severe weather conditions. Plan alternate routes.`;
+          
+        case 'airmet':
+          const airmets = data.airmets || [];
+          if (!airmets.length) return 'No moderate weather advisories.';
+          return `${airmets.length} AIRMETs active for conditions affecting light aircraft operations.`;
+          
+        default:
+          return 'No data available.';
+      }
+    }
+
+    function generateDetailedDecode(parsed, data) {
+      let decode = '';
+      const station = parsed.station || 'Unknown';
+      const stationName = data.weather?.station?.site || '';
+      
+      decode += `${station} — ${stationName || 'Unknown Airport'}\n`;
+      
+      if (parsed.time) {
+        const match = parsed.time.match(/(\d{2})(\d{2})(\d{2})Z/);
+        if (match) {
+          const [, day, hour, min] = match;
+          decode += `${parsed.time} — report time: ${day}th day at ${hour}${min} UTC\n`;
+        }
+      }
+      
+      if (parsed.wind) {
+        const match = parsed.wind.match(/(\d{3})(\d{2,3})KT/);
+        if (match) {
+          const [, dir, speed] = match;
+          const windDesc = speed <= 5 ? 'light' : speed <= 15 ? 'moderate' : 'strong';
+          decode += `${parsed.wind} — wind from ${dir}° at ${speed} kt (${windDesc} ${getWindDirection(parseInt(dir))} wind)\n`;
+        }
+      }
+      
+      if (parsed.visibility) {
+        const vis = parseInt(parsed.visibility);
+        const visKm = vis / 1000;
+        const visSM = (vis * 0.000621371).toFixed(2);
+        decode += `${parsed.visibility} — horizontal visibility ${vis.toLocaleString()} m = ${visKm} km ≈ ${visSM} statute miles\n`;
+      }
+      
+      if (parsed.weather) {
+        parsed.weather.forEach(wx => {
+          const wxDesc = getWeatherDescription(wx);
+          decode += `${wx} — ${wxDesc}\n`;
+        });
+      }
+      
+      if (parsed.clouds) {
+        parsed.clouds.forEach(cloud => {
+          const match = cloud.match(/(SCT|BKN|OVC|FEW)(\d{3})/);
+          if (match) {
+            const [, type, alt] = match;
+            const altitude = parseInt(alt) * 100;
+            const coverage = getCoverageDescription(type);
+            decode += `${cloud} — ${coverage} cloud layer at ${altitude.toLocaleString()} ft AGL (~${Math.round(altitude * 0.3048)} m)\n`;
+          }
+        });
+      }
+      
+      if (parsed.temperature) {
+        const match = parsed.temperature.match(/(M?\d{2})\/(M?\d{2})/);
+        if (match) {
+          let [, temp, dew] = match;
+          const tempC = parseInt(temp.replace('M', '-'));
+          const dewC = parseInt(dew.replace('M', '-'));
+          const dewDepression = tempC - dewC;
+          const rh = Math.round(100 * Math.exp((17.625 * dewC)/(243.04 + dewC)) / Math.exp((17.625 * tempC)/(243.04 + tempC)));
+          decode += `${parsed.temperature} — temperature ${temp.replace('M', '-')} °C, dewpoint ${dew.replace('M', '-')} °C. Dewpoint depression = ${dewDepression} °C; calculated relative humidity ≈ ${rh}%\n`;
+        }
+      }
+      
+      if (parsed.pressure) {
+        const match = parsed.pressure.match(/Q(\d{4})/);
+        if (match) {
+          const hPa = parseInt(match[1]);
+          const inHg = (hPa * 0.02953).toFixed(2);
+          const pressureDiff = hPa - 1013;
+          const pressureAlt = Math.round(pressureDiff * -27);
+          decode += `${parsed.pressure} — altimeter setting ${hPa} hPa (≈ ${inHg} inHg). ${pressureDiff >= 0 ? 'Above' : 'Below'} standard (1013 hPa). Pressure altitude at field ≈ ${pressureAlt >= 0 ? '+' : ''}${pressureAlt} ft\n`;
+        }
+      }
+      
+      decode += 'NOSIG — per METAR convention: no significant change expected in the next ~2 hours.';
+      
+      return decode;
+    }
+
+    function generateOperationalImplications(parsed, data) {
+      let ops = '';
+      const vis = parseInt(parsed.visibility) || 9999;
+      const visSM = vis * 0.000621371;
+      const cloudBase = getLowestCloudBase(parsed.clouds);
+      
+      // Flight category
+      ops += 'Flight category / minima: ';
+      if (visSM >= 5 && cloudBase >= 3000) {
+        ops += 'VFR - visual flight rules conditions.';
+      } else if (visSM >= 3 && cloudBase >= 1000) {
+        ops += `MVFR (marginal VFR) because visibility ≈ ${visSM.toFixed(1)} SM (<5 SM) and/or cloud base ${cloudBase.toLocaleString()} ft (between 1,000–3,000 ft). For airlines/IFR ops, this is perfectly flyable — for small-plane VFR ops, be cautious.`;
+      } else if (visSM >= 1 && cloudBase >= 500) {
+        ops += 'IFR conditions - instrument flight rules required.';
+      } else {
+        ops += 'LIFR (low IFR) conditions - challenging even for instrument flight.';
+      }
+      ops += '\n\n';
+      
+      // Approach/landing
+      ops += 'Approach/landing: ';
+      if (parsed.weather && parsed.weather.includes('HZ')) {
+        ops += 'Haze reduces visual contrast (runway environment may look "flat"). If planning visual approaches, build extra safety margins and brief go-around early. Use instruments if available.';
+      } else if (visSM < 5) {
+        ops += 'Reduced visibility may affect visual references. Consider instrument approaches even in VFR conditions.';
+      } else {
+        ops += 'Good visual conditions for approaches.';
+      }
+      ops += '\n\n';
+      
+      // Takeoff & climb
+      ops += 'Takeoff & climb: ';
+      const tempMatch = parsed.temperature?.match(/(\d{2})/);
+      const pressMatch = parsed.pressure?.match(/Q(\d{4})/);
+      if (tempMatch && pressMatch) {
+        const tempC = parseInt(tempMatch[1]);
+        const pressHPa = parseInt(pressMatch[1]);
+        const densityAlt = calculateDensityAltitude(tempC, pressHPa);
+        ops += `Density altitude ≈ ${densityAlt.toLocaleString()} ft. ${densityAlt > 2000 ? 'High density altitude' : 'Normal density altitude'} - ${densityAlt > 2000 ? 'expect reduced climb performance and longer takeoff roll' : 'minimal performance impact'}. Check POH/AFM performance tables.`;
+      } else {
+        ops += 'Performance calculations needed - check current conditions against aircraft performance charts.';
+      }
+      ops += '\n\n';
+      
+      // Weather evolution
+      ops += 'Weather evolution: ';
+      if (parsed.temperature) {
+        const tempMatch = parsed.temperature.match(/(\d{2})\/(\d{2})/);
+        if (tempMatch) {
+          const tempC = parseInt(tempMatch[1]);
+          const dewC = parseInt(tempMatch[2]);
+          const spread = tempC - dewC;
+          if (spread <= 3) {
+            ops += `Temperature/dewpoint spread of ${spread}°C indicates potential for fog/low cloud formation.`;
+          } else {
+            ops += `Temperature/dewpoint spread of ${spread}°C - fog formation unlikely in near term.`;
+          }
+        }
+      }
+      ops += ' NOSIG indicates no significant changes expected short term — check latest TAF/NOTAM/ATIS for trends.\n\n';
+      
+      // Pilot actions
+      ops += 'Pilot actions: ';
+      if (parsed.pressure) {
+        const match = parsed.pressure.match(/Q(\d{4})/);
+        if (match) {
+          ops += `Set altimeter to ${match[1]} hPa, `;
+        }
+      }
+      if (parsed.weather && parsed.weather.includes('HZ')) {
+        ops += 'brief for reduced visual contrast, ';
+      }
+      ops += 'plan conservative performance margins, monitor traffic/ATC for constraints.';
+      
+      return ops;
+    }
+
+    function generateNumbersSummary(parsed, data) {
+      let summary = '';
+      
+      if (parsed.visibility) {
+        const vis = parseInt(parsed.visibility);
+        const visKm = vis / 1000;
+        const visSM = (vis * 0.000621371).toFixed(2);
+        summary += `Visibility: ${vis.toLocaleString()} m / ${visSM} SM\n`;
+      }
+      
+      const cloudBase = getLowestCloudBase(parsed.clouds);
+      if (cloudBase < 10000) {
+        summary += `Cloud base: ${cloudBase.toLocaleString()} ft AGL / ${Math.round(cloudBase * 0.3048)} m\n`;
+      }
+      
+      if (parsed.temperature) {
+        const match = parsed.temperature.match(/(M?\d{2})\/(M?\d{2})/);
+        if (match) {
+          const tempC = parseInt(match[1].replace('M', '-'));
+          const dewC = parseInt(match[2].replace('M', '-'));
+          const rh = Math.round(100 * Math.exp((17.625 * dewC)/(243.04 + dewC)) / Math.exp((17.625 * tempC)/(243.04 + tempC)));
+          summary += `Relative humidity: ~${rh}%\n`;
+        }
+      }
+      
+      if (parsed.pressure) {
+        const match = parsed.pressure.match(/Q(\d{4})/);
+        if (match) {
+          const hPa = parseInt(match[1]);
+          const inHg = (hPa * 0.02953).toFixed(2);
+          summary += `QNH: ${hPa} hPa → ${inHg} inHg\n`;
+        }
+      }
+      
+      const tempMatch = parsed.temperature?.match(/(\d{2})/);
+      const pressMatch = parsed.pressure?.match(/Q(\d{4})/);
+      if (tempMatch && pressMatch) {
+        const tempC = parseInt(tempMatch[1]);
+        const pressHPa = parseInt(pressMatch[1]);
+        const densityAlt = calculateDensityAltitude(tempC, pressHPa);
+        summary += `Density altitude: ~${densityAlt.toLocaleString()} ft`;
+      }
+      
+      return summary;
+    }
+
+    function getWindDirection(degrees) {
+      const dirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+      return dirs[Math.round(degrees / 45) % 8];
+    }
+
+    function getWeatherDescription(code) {
+      const descriptions = {
+        'HZ': 'haze (reduced horizontal visibility due to aerosols/pollution/dust). Not fog — vertical visibility usually not affected, but visual cues are degraded.',
+        'FG': 'fog (visibility less than 1 km due to water droplets suspended in air)',
+        'BR': 'mist (visibility 1-5 km due to water droplets)',
+        'RA': 'rain',
+        'SN': 'snow',
+        'TS': 'thunderstorm'
+      };
+      return descriptions[code] || code;
+    }
+
+    function getCoverageDescription(code) {
+      const descriptions = {
+        'FEW': 'few (1-2 oktas coverage)',
+        'SCT': 'scattered (3-4 oktas coverage, not a ceiling by itself unless it becomes BKN/OVC)',
+        'BKN': 'broken (5-7 oktas coverage, constitutes a ceiling)',
+        'OVC': 'overcast (8 oktas coverage, complete ceiling)'
+      };
+      return descriptions[code] || code;
+    }
+
+    function showWeatherLayer(layerType) {
+      // Remove existing weather layer
+      if (weatherLayer) {
+        map.removeLayer(weatherLayer);
+      }
+      
+      // Add new weather layer (using free OpenWeatherMap tiles)
+      // Note: For production, you'd need an API key from OpenWeatherMap
+      weatherLayer = L.tileLayer(`https://tile.openweathermap.org/map/${layerType}/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`, {
+        attribution: 'Weather from OpenWeatherMap',
+        opacity: 0.6
+      });
+      
+      // For demo purposes, show a simple overlay message instead
+      if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === 'your_api_key_here') {
+        console.log(`Weather layer requested: ${layerType}`);
+        // You can add a popup or notification here about weather layer
+        return;
+      }
+      
+      weatherLayer.addTo(map);
+    }
+    
+    function clearRouteMap(){ 
+      // Reset map to default view
+      if (map) {
+        map.setView([39.8, -98.5], 4);
+        map.eachLayer(layer => {
+          if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+            map.removeLayer(layer);
+          }
+        });
+      }
+    }
+    
+    function drawRouteMap(nodes){
+      if(!nodes || nodes.length<2 || !map) return;
+      
+      // Clear existing markers and lines
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+          map.removeLayer(layer);
+        }
+      });
+      
+      // Add markers for each airport
+      const latlngs = [];
+      nodes.forEach(node => {
+        if (node.info && node.info.latitude && node.info.longitude) {
+          const lat = node.info.latitude;
+          const lng = node.info.longitude;
+          latlngs.push([lat, lng]);
+          
+          L.marker([lat, lng])
+            .addTo(map)
+            .bindPopup(`<strong>${node.code}</strong><br>${node.info.name}`);
+        }
+      });
+      
+      // Draw route line
+      if (latlngs.length > 1) {
+        L.polyline(latlngs, { color: '#22c55e', weight: 3 }).addTo(map);
+        
+        // Fit map to show all airports
+        const group = new L.featureGroup(map._layers);
+        map.fitBounds(group.getBounds().pad(0.1));
+      }
+    }
+
+    document.addEventListener('click', e=>{
+      const t = e.target;
+      if(t.classList.contains('toggle')){
+        const id=t.getAttribute('data-target');
+        const box=document.getElementById(id);
+        if(!box) return;
+        const open=!box.classList.contains('hidden');
+        if(open){ box.classList.add('hidden'); t.textContent=t.textContent.replace('▼','▶'); }
+        else { box.classList.remove('hidden'); t.textContent=t.textContent.replace('▶','▼'); }
+      }
+    });
+
+    function renderSingle(data, dataTypes){
+      show('singleSection');
+      hide('routeNodes');
+
+      const a = data.analysis || {};
+      const metarText = data.weather?.metar?.raw_text || '';
+      const parsed = parseMetar(metarText);
+      const summary = generateStationSummary(parsed, data);
+      
+      // Generate and display overall weather summary
+      const weatherSummary = generateOverallWeatherSummary(data, parsed, dataTypes);
+      const summaryEl = document.getElementById('overallSummary');
+      if (summaryEl) {
+        summaryEl.textContent = weatherSummary.summary;
+        summaryEl.className = `summary-banner ${weatherSummary.severity}`;
+      }
+      
+      // Populate station summary grid
+      setText('stationInfo', summary.station);
+      setText('timeInfo', summary.time);
+      setText('windInfo', summary.wind);
+      setText('visInfo', summary.visibility);
+      setText('cloudInfo', summary.clouds);
+      setText('tempInfo', summary.temperature);
+      setText('qnhInfo', summary.pressure);
+      setText('trendInfo', summary.trend);
+      
+      // Use backend AI analysis if available, fallback to client-side
+      const operationalTakeaway = a.operational_takeaway || generateOperationalTakeaway(parsed, summary, data);
+      const recommendations = a.recommendations_detailed || generateRecommendations(parsed, summary);
+      const altBrief = a.altitude_distance_brief || generateAltitudeDistanceBrief(parsed, data);
+      
+      setText('operationalTakeaway', operationalTakeaway);
+      setText('recommendationsDetailed', recommendations);
+      setText('altBrief', altBrief);
+      
+      // Use backend detailed analysis if available, fallback to client-side
+      const detailedDecode = a.details?.field_decode || generateDetailedDecode(parsed, data);
+      const operationalImplications = a.details?.operational_implications || generateOperationalImplications(parsed, data);
+      const numbersSummary = a.details?.numbers_summary || generateNumbersSummary(parsed, data);
+      
+      setText('decodeBox', detailedDecode);
+      setText('opsBox', operationalImplications);
+      setText('numsBox', numbersSummary);
+      
+      // Generate data type summaries
+      const dataTypeContainer = document.getElementById('dataTypeDropdowns');
+      if (dataTypeContainer) {
+        dataTypeContainer.innerHTML = '';
+        const activeDataTypes = [];
+        if (dataTypes.metar) activeDataTypes.push('metar');
+        if (dataTypes.taf) activeDataTypes.push('taf');
+        if (dataTypes.pirep) activeDataTypes.push('pirep');
+        if (dataTypes.notam) activeDataTypes.push('notam');
+        if (dataTypes.sigmet) activeDataTypes.push('sigmet');
+        if (dataTypes.airmet) activeDataTypes.push('airmet');
+        
+        if (activeDataTypes.length > 0) {
+          activeDataTypes.forEach(type => {
+            const typeLabel = type.toUpperCase();
+            const typeSummary = generateDataTypeSummary(type, data, parsed);
+            
+            const dropdown = document.createElement('details');
+            dropdown.className = 'data-type-dropdown';
+            dropdown.innerHTML = `
+              <summary style="color:var(--text-accent); font-weight:500; cursor:pointer;">${typeLabel} Summary</summary>
+              <div class="data-type-summary">${typeSummary}</div>
+            `;
+            dataTypeContainer.appendChild(dropdown);
+          });
+        }
+      }
+
+      // Raw data sections - ensure we always show available raw data
+      const rawSections = [];
+      if (metarText) rawSections.push(`METAR: ${metarText}`);
+      if (data.weather?.taf?.raw_text) rawSections.push(`\nTAF: ${data.weather.taf.raw_text}`);
+      setText('rawMetar', rawSections.join('\n') || 'No raw weather data received from API.');
+      
+      // Legacy AI sections
+      const ai = [
+        a.thunderstorms || "",
+        a.clouds || "",
+        a.visibility || "", 
+        a.winds || "",
+        a.precipitation || ""
+      ].filter(Boolean).join('\n');
+      setText('aiSections', ai || 'No legacy AI analysis available.');
+
+      // Handle all data types
+      const hasAnyAdvisories = dataTypes.pirep || dataTypes.notam || dataTypes.sigmet || dataTypes.airmet;
+      if (hasAnyAdvisories) {
+        show('advisoriesSingle');
+        
+        const advisoryContent = [];
+        
+        if (dataTypes.pirep) {
+          const pirepText = (data.pireps||[]).map(x=>x.raw_text||x.report).join('\n\n') || 'No PIREPs found.';
+          advisoryContent.push(`PIREPs:\n${pirepText}`);
+        }
+        
+        if (dataTypes.notam) {
+          const notamText = (data.notams||[]).map(x=>x.raw_text||x.notice).join('\n\n') || 'No NOTAMs found.';
+          advisoryContent.push(`NOTAMs:\n${notamText}`);
+        }
+        
+        if (dataTypes.sigmet) {
+          const sigmetText = (data.sigmets||[]).map(x=>x.raw_text).join('\n\n') || 'No SIGMETs found.';
+          advisoryContent.push(`SIGMETs:\n${sigmetText}`);
+        }
+        
+        if (dataTypes.airmet) {
+          const airmetText = (data.airmets||[]).map(x=>x.raw_text).join('\n\n') || 'No AIRMETs found.';
+          advisoryContent.push(`AIRMETs:\n${airmetText}`);
+        }
+        
+        // Show content in separate boxes or combined
+        if (advisoryContent.length === 1) {
+          document.getElementById('sigmetBox').textContent = advisoryContent[0];
+          document.getElementById('airmetBox').textContent = '';
+        } else {
+          document.getElementById('sigmetBox').textContent = advisoryContent.slice(0, Math.ceil(advisoryContent.length/2)).join('\n\n\n');
+          document.getElementById('airmetBox').textContent = advisoryContent.slice(Math.ceil(advisoryContent.length/2)).join('\n\n\n');
+        }
+        
+        // Product focus
+        const activeTypes = [];
+        if (dataTypes.metar) activeTypes.push('METAR');
+        if (dataTypes.taf) activeTypes.push('TAF');
+        if (dataTypes.pirep) activeTypes.push('PIREP');
+        if (dataTypes.notam) activeTypes.push('NOTAM');
+        if (dataTypes.sigmet) activeTypes.push('SIGMET');
+        if (dataTypes.airmet) activeTypes.push('AIRMET');
+        setText('productFocus', activeTypes.length ? `Viewing: ${activeTypes.join(' + ')}` : '');
+      } else {
+        hide('advisoriesSingle');
+        const activeTypes = [];
+        if (dataTypes.metar) activeTypes.push('METAR');
+        if (dataTypes.taf) activeTypes.push('TAF');
+        setText('productFocus', activeTypes.length ? `Viewing: ${activeTypes.join(' + ')}` : '');
+      }
+    }
+
+    function renderRoute(data, dataTypes){
+      hide('singleSection');
+      show('routeNodes');
+
+      setText('routeBanner', `Overall: ${data.overallseverity || 'Unknown'}`);
+      
+      // Update product focus based on selected data types
+      const activeTypes = [];
+      if (dataTypes.metar) activeTypes.push('METAR');
+      if (dataTypes.taf) activeTypes.push('TAF');
+      if (dataTypes.pirep) activeTypes.push('PIREP');
+      if (dataTypes.notam) activeTypes.push('NOTAM');
+      if (dataTypes.sigmet) activeTypes.push('SIGMET');
+      if (dataTypes.airmet) activeTypes.push('AIRMET');
+      setText('productFocus', activeTypes.length ? `Viewing: ${activeTypes.join(' + ')}` : '');
+      
+      show('routeSummary');
+      setText('routeSummaryText', data.analysis || 'Route analysis pending...');
+
+      const grid = document.getElementById('nodesGrid');
+      grid.innerHTML = "";
+      (data.nodes || []).forEach(n=>{
+        // Generate enhanced analysis for this node
+        const metarText = n.weather?.metar?.raw_text || '';
+        const parsed = parseMetar(metarText);
+        const summary = generateStationSummary(parsed, { weather: n.weather });
+        const operationalTakeaway = n.analysis?.operational_takeaway || generateOperationalTakeaway(parsed, summary, { weather: n.weather });
+        const recommendations = n.analysis?.recommendations_detailed || generateRecommendations(parsed, summary);
+        const detailedDecode = n.analysis?.details?.field_decode || generateDetailedDecode(parsed, { weather: n.weather });
+        const operationalImplications = n.analysis?.details?.operational_implications || generateOperationalImplications(parsed, { weather: n.weather });
+        const numbersSummary = n.analysis?.details?.numbers_summary || generateNumbersSummary(parsed, { weather: n.weather });
+        
+        // Generate weather summary for this airport
+        const routeWeatherSummary = generateOverallWeatherSummary({ weather: n.weather, sigmets: n.sigmets, airmets: n.airmets, pireps: n.pireps, notams: n.notams, analysis: n.analysis }, parsed, dataTypes);
+        
+        const el = document.createElement('div');
+        el.className = "card";
+        el.innerHTML = `
+          <div class="small"><b>${n.code}</b> — ${n.info.name}</div>
+          <div class="summary-banner ${routeWeatherSummary.severity}" style="margin:8px 0; padding:8px; font-size:12px;">${routeWeatherSummary.summary}</div>
+          <div class="small">Severity: ${n.analysis?.severity || 'Unknown'}</div>
+          <div class="small">Summary: ${n.analysis?.conciseanalysis || 'Analysis unavailable'}</div>
+          
+          <details style="margin-top:8px;">
+            <summary>Station Summary</summary>
+            <div class="summary-grid" style="grid-template-columns: 1fr; gap:4px; margin:8px 0;">
+              <div><strong>Station:</strong> ${summary.station}</div>
+              <div><strong>Time:</strong> ${summary.time}</div>
+              <div><strong>Wind:</strong> ${summary.wind}</div>
+              <div><strong>Visibility:</strong> ${summary.visibility}</div>
+              <div><strong>Clouds:</strong> ${summary.clouds}</div>
+              <div><strong>Temp/Dew:</strong> ${summary.temperature}</div>
+              <div><strong>QNH:</strong> ${summary.pressure}</div>
+              <div><strong>Trend:</strong> ${summary.trend}</div>
+            </div>
+          </details>
+          
+          <details>
+            <summary>Operational Takeaway</summary>
+            <pre>${operationalTakeaway}</pre>
+          </details>
+          
+          <details>
+            <summary>Recommendations</summary>
+            <pre>${recommendations}</pre>
+          </details>
+          
+          <details>
+            <summary>Altitude & Distance</summary>
+            <pre>${generateAltitudeDistanceBrief(parsed, { weather: n.weather, sigmets: n.sigmets, airmets: n.airmets })}</pre>
+          </details>
+          
+          <details>
+            <summary>Detailed Analysis</summary>
+            <details><summary>Detailed decode (field-by-field)</summary><pre>${detailedDecode}</pre></details>
+            <details><summary>Operational implications (what actually matters)</summary><pre>${operationalImplications}</pre></details>
+            <details><summary>Numbers summary (rounded)</summary><pre>${numbersSummary}</pre></details>
+          </details>
+          
+          <details>
+            <summary>Data Type Summaries</summary>
+            <div class="content">
+              ${(() => {
+                const nodeData = { weather: n.weather, pireps: n.pireps, notams: n.notams, sigmets: n.sigmets, airmets: n.airmets };
+                const summaries = [];
+                if (dataTypes.metar) summaries.push(`<strong>METAR:</strong> ${generateDataTypeSummary('metar', nodeData, parsed)}`);
+                if (dataTypes.taf) summaries.push(`<strong>TAF:</strong> ${generateDataTypeSummary('taf', nodeData, parsed)}`);
+                if (dataTypes.pirep) summaries.push(`<strong>PIREP:</strong> ${generateDataTypeSummary('pirep', nodeData, parsed)}`);
+                if (dataTypes.notam) summaries.push(`<strong>NOTAM:</strong> ${generateDataTypeSummary('notam', nodeData, parsed)}`);
+                if (dataTypes.sigmet) summaries.push(`<strong>SIGMET:</strong> ${generateDataTypeSummary('sigmet', nodeData, parsed)}`);
+                if (dataTypes.airmet) summaries.push(`<strong>AIRMET:</strong> ${generateDataTypeSummary('airmet', nodeData, parsed)}`);
+                return summaries.map(s => `<div style="margin:8px 0; padding:8px; background:var(--bg-secondary); border-radius:6px;">${s}</div>`).join('') || '<div>No data summaries available</div>';
+              })()} 
+            </div>
+          </details>
+          
+          <details>
+            <summary>Raw Weather Data</summary>
+            <div class="content">
+              ${(() => {
+                const rawSections = [];
+                if (metarText) rawSections.push(`<div><strong>METAR:</strong></div><pre>${metarText}</pre>`);
+                if (n.weather?.taf?.raw_text) rawSections.push(`<div><strong>TAF:</strong></div><pre>${n.weather.taf.raw_text}</pre>`);
+                return rawSections.join('') || '<div>No raw weather data available</div>';
+              })()} 
+            </div>
+          </details>
+          
+          ${(() => {
+            const advisories = [];
+            if (dataTypes.pirep && n.pireps && n.pireps.length) {
+              advisories.push(`<details><summary>PIREPs (${n.pireps.length})</summary><pre>${n.pireps.map(x=>x.raw_text||x.report).join('\n\n')}</pre></details>`);
+            }
+            if (dataTypes.notam && n.notams && n.notams.length) {
+              advisories.push(`<details><summary>NOTAMs (${n.notams.length})</summary><pre>${n.notams.map(x=>x.raw_text||x.notice).join('\n\n')}</pre></details>`);
+            }
+            if (dataTypes.sigmet && n.sigmets && n.sigmets.length) {
+              advisories.push(`<details><summary>SIGMETs (${n.sigmets.length})</summary><pre>${n.sigmets.map(x=>x.raw_text).join('\n\n')}</pre></details>`);
+            }
+            if (dataTypes.airmet && n.airmets && n.airmets.length) {
+              advisories.push(`<details><summary>AIRMETs (${n.airmets.length})</summary><pre>${n.airmets.map(x=>x.raw_text).join('\n\n')}</pre></details>`);
+            }
+            return advisories.join('');
+          })()}
+        `;
+        grid.appendChild(el);
+      });
+    }
+  </script>
+</body>
+</html>
